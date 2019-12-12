@@ -7,7 +7,10 @@
 //
 
 #include <iostream>
+#include <fstream>
+#include <cmath>
 #include <vector>
+#include <algorithm>
 
 struct MazeCell {
     bool isWall;
@@ -52,8 +55,27 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
-void ininitialize_maze(int size, std::vector<std::vector<MazeCell>> maze) {
-    ;
+std::vector<std::vector<MazeCell>> ininitialize_maze() {
+    // Get the size of the maze.
+    std::ifstream inFile("maze-generator/maze_export");
+    int count = std::count(std::istreambuf_iterator<char>(inFile),
+               std::istreambuf_iterator<char>(), '\n');
+    std::cout << count;
+
+    std::vector<std::vector<MazeCell>> maze(std::sqrt(count),
+                                            std::vector<MazeCell>(std::sqrt(count)));
+
+    std::ifstream in("maze-generator/maze_export");
+    std::string str;
+
+    while(std::getline(in, str)) {
+        if (str.size() > 0) {
+            // Initialise maze.
+            
+        }
+    }
+
+    return maze;
 }
 
 void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
