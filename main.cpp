@@ -32,20 +32,10 @@ std::vector<std::vector<MazeCell>> initialize_maze();
 void print_maze(int size, std::vector<std::vector<MazeCell>> maze);
 
 int main(int argc, const char * argv[]) {
-    char m [5][5] =
-    {   {'-','-','-','-','-'},
-        {'.','.','-','.','.'},
-        {'-','.','.','.','-'},
-        {'-','.','-','.','-'},
-        {'-','-','-','-','-'}
-    };
-    
-    int size = 5;
     std::vector<std::vector<MazeCell>> maze;
-    
     maze = initialize_maze();
     
-    print_maze(size, maze);
+    print_maze(maze.size(), maze);
     
     
     // Make an agent
@@ -70,6 +60,9 @@ std::vector<std::vector<MazeCell>> initialize_maze() {
 
     std::ifstream in("maze-generator/maze_export");
     std::string str;
+
+    // Skip the first line.
+    std::getline(in, str);
 
     while(std::getline(in, str)) {
         if (str.size() > 0) {
