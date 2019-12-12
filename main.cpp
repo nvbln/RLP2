@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -25,7 +27,8 @@ struct Agent {
     
 };
 
-void initialize_maze(std::vector<std::vector<MazeCell>> maze);
+std::vector<std::string> split(std::string strToSplit, char delimiter);
+std::vector<std::vector<MazeCell>> initialize_maze();
 void print_maze(int size, std::vector<std::vector<MazeCell>> maze);
 
 int main(int argc, const char * argv[]) {
@@ -40,7 +43,7 @@ int main(int argc, const char * argv[]) {
     int size = 5;
     std::vector<std::vector<MazeCell>> maze;
     
-    initialize_maze(maze);
+    maze = initialize_maze();
     
     print_maze(size, maze);
     
@@ -55,7 +58,7 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
-std::vector<std::vector<MazeCell>> ininitialize_maze() {
+std::vector<std::vector<MazeCell>> initialize_maze() {
     // Get the size of the maze.
     std::ifstream inFile("maze-generator/maze_export");
     int count = std::count(std::istreambuf_iterator<char>(inFile),
@@ -71,7 +74,30 @@ std::vector<std::vector<MazeCell>> ininitialize_maze() {
     while(std::getline(in, str)) {
         if (str.size() > 0) {
             // Initialise maze.
-            
+            std::vector<std::string> splittedString = split(str, ',');
+
+            // Create a MazeCell
+            MazeCell cell;
+            if (std::stoi(splittedString[2]) == 1) {
+                cell.isWall = true;
+            } else {
+                cell.isWall = false;
+            }
+
+            if (std::stoi(splittedString[3]) == 1) {
+                cell.isStart = true;
+            } else {
+                cell.isStart = false;
+            }
+
+            if (std::stoi(splittedString[4]) == 1) {
+                cell.isEnd = true;
+            } else {
+                cell.isEnd = false;
+            }
+
+            maze[std::stoi(splittedString[0])][std::stoi(splittedString[1])]
+                    = cell;
         }
     }
 
@@ -86,5 +112,15 @@ void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
         std::cout <<'\n';
     }
     return;
+}
+
+std::vector<std::string> split(std::string strToSplit, char delimiter) {
+    std::stringstream ss(strToSplit);
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimiter)) {
+        splittedStrings.push_back(item);
+    }
+    return splittedStrings;
 }
 
