@@ -11,6 +11,8 @@
 
 struct MazeCell {
     bool isWall;
+    bool isStart;
+    bool isEnd;
     int reward;
     
 };
