@@ -81,12 +81,12 @@ class Maze:
           outtable += ' '
           # This is a path.
           file_content += ",0"
-          if (i == self.startrow and j == self.startcol):
-              file_content += ",true,false\n"
-          elif (i == self.endrow and j == self.endrow):
-              file_content += ",false,true\n"
-          else:
-              file_content += ",false,false\n"
+        if (i == self.startrow and j == self.startcol):
+            file_content += ",true,false\n"
+        elif (i == self.endrow and j == self.endrow):
+            file_content += ",false,true\n"
+        else:
+            file_content += ",false,false\n"
         if self.maze[i][j][RIGHTWALL]:
           outtable += '|'
         else:
