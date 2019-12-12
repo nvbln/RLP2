@@ -3,7 +3,7 @@
 //  mazes
 //
 //  Created by Galina on 10/12/2019.
-//  Copyright © 2019 Galina. All rights reserved.
+//  Copyright © 2019 Galina and Nathan. All rights reserved.
 //
 
 #include <iostream>
