@@ -63,7 +63,7 @@ class Maze:
   # returns the maze in ascii characters for printing on terminal
   def __str__(self):
     file = open('maze_export', 'w')
-    file_content = "row,column,type,start,end\n"
+    file_content = "row,column,up,down,left,right,start,end\n"
 
     # the upper wall first
     outtable = '.'+self.cols*'_.'+'\n'
@@ -72,21 +72,41 @@ class Maze:
       outtable += '|'
 
       for j in range(self.cols):
-        file_content += str(i) + "," + str(j)
+        # Enter the coordinates.
+        file_content += str(i) + "," + str(j) + ","
+
+        # Check which actions are possible.
+        # Up
+        if (i == 0 or self.maze[i-1][j][BOTTOMWALL]):
+          file_content += "0,"
+        else:
+          file_content += "1,"
+        # Down
+        if (i == self.rows or self.maze[i][j][BOTTOMWALL]):
+          file_content += "0,"
+        else:
+          file_content += "1,"
+        # Left
+        if (j == 0 or self.maze[i][j-1][RIGHTWALL]):
+          file_content += "0,"
+        else:
+          file_content += "1,"
+        # Right
+        if (j == self.cols or self.maze[i][j][RIGHTWALL]):
+          file_content += "0,"
+        else:
+          file_content += "1,"
+
         if self.maze[i][j][BOTTOMWALL]:
           outtable += '_'
-          # This is a wall.
-          file_content += ",1"
         else:
           outtable += ' '
-          # This is a path.
-          file_content += ",0"
         if (i == self.startrow and j == self.startcol):
-            file_content += ",1,0\n"
+            file_content += "1,0\n"
         elif (i == self.endrow and j == self.endrow):
-            file_content += ",0,1\n"
+            file_content += "0,1\n"
         else:
-            file_content += ",0,0\n"
+            file_content += "0,0\n"
         if self.maze[i][j][RIGHTWALL]:
           outtable += '|'
         else:

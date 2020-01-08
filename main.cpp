@@ -15,9 +15,12 @@
 #include <algorithm>
 
 struct MazeCell {
-    bool isWall;
     bool isStart;
     bool isEnd;
+    bool up;
+    bool down;
+    bool left;
+    bool right;
     int reward;
     
 };
@@ -53,7 +56,7 @@ std::vector<std::vector<MazeCell>> initialize_maze() {
     std::ifstream inFile("maze-generator/maze_export");
     int count = std::count(std::istreambuf_iterator<char>(inFile),
                std::istreambuf_iterator<char>(), '\n');
-    std::cout << count;
+    //std::cout << count;
 
     std::vector<std::vector<MazeCell>> maze(std::sqrt(count),
                                             std::vector<MazeCell>(std::sqrt(count)));
@@ -72,18 +75,36 @@ std::vector<std::vector<MazeCell>> initialize_maze() {
             // Create a MazeCell
             MazeCell cell;
             if (std::stoi(splittedString[2]) == 1) {
-                cell.isWall = true;
+                cell.up = true;
             } else {
-                cell.isWall = false;
+                cell.up = false;
             }
 
             if (std::stoi(splittedString[3]) == 1) {
+                cell.down = true;
+            } else {
+                cell.down = false;
+            }
+
+            if (std::stoi(splittedString[4]) == 1) {
+                cell.left = true;
+            } else {
+                cell.left = false;
+            }
+
+            if (std::stoi(splittedString[5]) == 1) {
+                cell.right = true;
+            } else {
+                cell.right = false;
+            }
+
+            if (std::stoi(splittedString[6]) == 1) {
                 cell.isStart = true;
             } else {
                 cell.isStart = false;
             }
 
-            if (std::stoi(splittedString[4]) == 1) {
+            if (std::stoi(splittedString[7]) == 1) {
                 cell.isEnd = true;
             } else {
                 cell.isEnd = false;
@@ -98,11 +119,28 @@ std::vector<std::vector<MazeCell>> initialize_maze() {
 }
 
 void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
+    std::cout << ".";
     for (int i = 0; i < size; i++) {
+        std::cout << "_.";
+    }
+    std::cout << '\n';
+
+    for (int i = 0; i < size; i++) {
+        std::cout << "|";
         for (int j = 0; j < size; j++) {
-            std::cout << (maze[i][j].isWall?'-':'.');
+            if (maze[i][j].down == 0) {
+                std::cout << "_";
+            } else {
+                std::cout << " ";
+            }
+
+            if (maze[i][j].right == 0) {
+                std::cout << "|";
+            } else {
+                std::cout << ".";
+            }
         }
-        std::cout <<'\n';
+        std::cout << '\n';
     }
     return;
 }
