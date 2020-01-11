@@ -41,14 +41,14 @@ struct Agent {
     
 };
 
-void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon);
-void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon);
+void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
+void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
 int findOptimalAction(double values[], int length);
-std::vector<std::string> split(std::string strToSplit, char delimiter);
-std::vector<std::vector<MazeCell> > initialize_maze();
-void print_maze(int size, std::vector<std::vector<MazeCell> > maze);
-void print_optimal_actions(std::vector<std::vector<CellValue> > mazeValues);
+vector<string> split(string strToSplit, char delimiter);
+vector<vector<MazeCell> > initialize_maze();
+void print_maze(int size, vector<vector<MazeCell> > maze);
+void print_optimal_actions(vector<vector<CellValue> > mazeValues);
 
 double alpha = 0.1;
 double ygamma = 0.7;
@@ -56,26 +56,26 @@ double ygamma = 0.7;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
-    std::vector<std::vector<MazeCell> > maze;
+    vector<vector<MazeCell> > maze;
     maze = initialize_maze();
     
     print_maze(maze.size(), maze);
     
-    qlearning(maze, 10000, greedyEpsilon);
+    sarsa(maze, 10000, greedyEpsilon);
     
     return 0;
 }
 
-void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
+void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     MazeCell startCell, endCell, currentCell;
 
     // Random generator
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution(0.0,1.0);
+    default_random_engine generator;
+    uniform_real_distribution<double> distribution(0.0,1.0);
 
     // Create a matrix containing random state-action values.
-    std::vector<std::vector<CellValue> > mazeValues(maze.size(),
-            std::vector<CellValue>(maze.size()));
+    vector<vector<CellValue> > mazeValues(maze.size(),
+            vector<CellValue>(maze.size()));
     for (int i = 0; i < maze.size(); i++) {
         for (int j = 0; j < maze.size(); j++) {
             // Give every action a random value.
@@ -101,9 +101,9 @@ void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedy
         }
     }
 
-    std::cout << "\nInitial (random) optimal actions:\n";
+    cout << "\nInitial (random) optimal actions:\n";
     print_optimal_actions(mazeValues);
-    std::cout << '\n';
+    cout << '\n';
 
     // Keep track of best and worst performance.
     int maxSteps = 0;
@@ -112,7 +112,7 @@ void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedy
     for (int i = 0; i < episodes; i++) {
         int step = 0;
 
-        std::cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+        cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
 
         // Choose initial cell and action.
         currentCell = startCell;
@@ -135,9 +135,7 @@ void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedy
                     break;
                 case 2:
                     // Left
-                    if (currentCell.y != 0) {
-                        newCell = maze[currentCell.x][currentCell.y - 1];
-                    }
+                    newCell = maze[currentCell.x][currentCell.y - 1];
                     break;
                 case 3:
                     // Right
@@ -167,27 +165,27 @@ void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedy
         }
 
         // Report number of steps.
-        std::cout << "Number of steps: " << step << '\n';
+        cout << "Number of steps: " << step << '\n';
     }
 
-    std::cout << '\n';
+    cout << '\n';
     print_optimal_actions(mazeValues);
     print_maze(maze.size(), maze);
 
-    std::cout << "\nMax steps: " << maxSteps << '\n';
-    std::cout << "Min steps: " << minSteps << '\n';
+    cout << "\nMax steps: " << maxSteps << '\n';
+    cout << "Min steps: " << minSteps << '\n';
 }
 
-void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
+void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     MazeCell startCell, endCell, currentCell;
 
     // Random generator
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution(0.0,1.0);
+    default_random_engine generator;
+    uniform_real_distribution<double> distribution(0.0,1.0);
 
     // Create a matrix containing random state-action values.
-    std::vector<std::vector<CellValue> > mazeValues(maze.size(),
-            std::vector<CellValue>(maze.size()));
+    vector<vector<CellValue> > mazeValues(maze.size(),
+            vector<CellValue>(maze.size()));
     for (int i = 0; i < maze.size(); i++) {
         for (int j = 0; j < maze.size(); j++) {
             // Give every action a random value.
@@ -213,9 +211,9 @@ void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double gr
         }
     }
 
-    std::cout << "\nInitial (random) optimal actions:\n";
+    cout << "\nInitial (random) optimal actions:\n";
     print_optimal_actions(mazeValues);
-    std::cout << '\n';
+    cout << '\n';
 
     // Keep track of best and worst performance.
     int maxSteps = 0;
@@ -224,8 +222,8 @@ void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double gr
 
     for (int i = 0; i < episodes; i++) {
         int step = 0;
-cout << size <<(1 / exp((0.0001 * i))) ;
-        std::cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+        
+        cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
         
         // Choose initial cell and action.
         currentCell = startCell;
@@ -233,48 +231,27 @@ cout << size <<(1 / exp((0.0001 * i))) ;
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
             step++;
             MazeCell newCell;
-
-            if (currentCell.x == 9 || currentCell.x == 0 || currentCell.y == 9 || currentCell.y == 0){
-                //break;
-            }
             
             int actionIndex = chooseAction(currentCell,
                               mazeValues[currentCell.x][currentCell.y],
                               i, greedyEpsilon);
-            //cout << currentCell.x<<' '<<currentCell.y ;
-            //cout << actionIndex;
 
             switch(actionIndex) {
                 case 0:
                     // Up
-                    if (currentCell.x != 0) {
                     newCell = maze[currentCell.x-1][currentCell.y];
-                    }
                     break;
                 case 1:
                     // Down
-                    if (currentCell.x != size - 1) {
                     newCell = maze[currentCell.x+1][currentCell.y];
-                    } else {cout <<'\n'<< currentCell.x<<' '<<currentCell.y<<'\n' ;
-                        cout << actionIndex<<'\n';
-                                           return;
-                                       }
-
                     break;
                 case 2:
                     // Left
-                    if (currentCell.y != 0) {
-                        newCell = maze[currentCell.x][currentCell.y-1];
-                    } else {
-                                           return;
-                                       }
-
+                    newCell = maze[currentCell.x][currentCell.y-1];
                     break;
                 case 3:
                     // Right
-                    if (currentCell.y != size - 1) {
                     newCell = maze[currentCell.x][currentCell.y+1];
-                    }
                     break;
                 default:
                     // This should never happen.
@@ -299,20 +276,20 @@ cout << size <<(1 / exp((0.0001 * i))) ;
         }
 
         // Report number of steps.
-        std::cout << "Number of steps: " << step << '\n';
+        cout << "Number of steps: " << step << '\n';
     }
 
-    std::cout << '\n';
+    cout << '\n';
     print_optimal_actions(mazeValues);
     print_maze(maze.size(), maze);
 
-    std::cout << "\nMax steps: " << maxSteps << '\n';
-    std::cout << "Min steps: " << minSteps << '\n';
+    cout << "\nMax steps: " << maxSteps << '\n';
+    cout << "Min steps: " << minSteps << '\n';
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode,double greedyEpsilon) {
     int optimalAction = findOptimalAction(values.actions, 4);
-    //cout <<cell.x << cell.y<< ' '<< optimalAction<<' '<<cell.up <<' '<<cell.down<<' '<<cell.left<<' '<<cell.right;
+    
     if (!cell.up && optimalAction == 0) {
         optimalAction = 1;
     }
@@ -331,7 +308,6 @@ int chooseAction(MazeCell cell, CellValue values, int episode,double greedyEpsil
     if (!cell.down && optimalAction == 1) {
         optimalAction = 2;
     }
-    //cout <<'\n'<<cell.x << cell.y<< ' '<< optimalAction<<' '<<cell.up <<' '<<cell.down<<' '<<cell.left<<' '<<cell.right;
     
     int possibleActions = 0;
 
@@ -353,11 +329,9 @@ int chooseAction(MazeCell cell, CellValue values, int episode,double greedyEpsil
 
     double number = (double) rand() / (double) RAND_MAX;
     if (number <= 1 - (greedyEpsilon * (1 / exp(0.0001 * episode)))) {
-        //cout <<'\n'<<"GGG"<<optimalAction <<'\n';
         return optimalAction;
     } else {
         int action = floor(possibleActions * ((double) rand() / (double) RAND_MAX));
-        //cout <<'\n'<<"GGG"<<action <<'\n';
         switch(action) {
             case 0:
                 if (cell.up) {
@@ -388,7 +362,7 @@ int chooseAction(MazeCell cell, CellValue values, int episode,double greedyEpsil
             default: return optimalAction;
         }
 
-        std::cout << '\n';
+        cout << '\n';
     }
 }
 
@@ -405,62 +379,62 @@ int findOptimalAction(double values[], int length) {
     return optimalAction;
 }
 
-std::vector<std::vector<MazeCell> > initialize_maze() {
+vector<vector<MazeCell> > initialize_maze() {
     // Get the size of the maze.
-    std::ifstream inFile("maze-generator/maze_export");
-    int count = std::count(std::istreambuf_iterator<char>(inFile),
-               std::istreambuf_iterator<char>(), '\n');
+    ifstream inFile("maze-generator/maze_export");
+    int count = std::count(istreambuf_iterator<char>(inFile),
+               istreambuf_iterator<char>(), '\n');
 
-    std::vector<std::vector<MazeCell> > maze(std::sqrt(count),
-                                            std::vector<MazeCell>(std::sqrt(count)));
+    vector<vector<MazeCell> > maze(sqrt(count),
+                                            vector<MazeCell>(sqrt(count)));
 
-    std::ifstream in("maze-generator/maze_export");
-    std::string str;
+    ifstream in("maze-generator/maze_export");
+    string str;
 
     // Skip the first line.
-    std::getline(in, str);
+    getline(in, str);
 
-    while(std::getline(in, str)) {
+    while(getline(in, str)) {
         if (str.size() > 0) {
             // Initialise maze.
-            std::vector<std::string> splittedString = split(str, ',');
+            vector<string> splittedString = split(str, ',');
 
             // Create a MazeCell
             MazeCell cell;
 
             // Set a default reward.
             cell.reward = -0.01;
-            if (std::stoi(splittedString[2]) == 1) {
+            if (stoi(splittedString[2]) == 1) {
                 cell.up = true;
             } else {
                 cell.up = false;
             }
 
-            if (std::stoi(splittedString[3]) == 1) {
+            if (stoi(splittedString[3]) == 1) {
                 cell.down = true;
             } else {
                 cell.down = false;
             }
 
-            if (std::stoi(splittedString[4]) == 1) {
+            if (stoi(splittedString[4]) == 1) {
                 cell.left = true;
             } else {
                 cell.left = false;
             }
 
-            if (std::stoi(splittedString[5]) == 1) {
+            if (stoi(splittedString[5]) == 1) {
                 cell.right = true;
             } else {
                 cell.right = false;
             }
 
-            if (std::stoi(splittedString[6]) == 1) {
+            if (stoi(splittedString[6]) == 1) {
                 cell.isStart = true;
             } else {
                 cell.isStart = false;
             }
 
-            if (std::stoi(splittedString[7]) == 1) {
+            if (stoi(splittedString[7]) == 1) {
                 cell.isEnd = true;
 
                 // Set a finish reward.
@@ -469,8 +443,8 @@ std::vector<std::vector<MazeCell> > initialize_maze() {
                 cell.isEnd = false;
             }
 
-            cell.x = std::stoi(splittedString[0]);
-            cell.y = std::stoi(splittedString[1]);
+            cell.x = stoi(splittedString[0]);
+            cell.y = stoi(splittedString[1]);
 
             maze[cell.x][cell.y] = cell;
         }
@@ -479,28 +453,28 @@ std::vector<std::vector<MazeCell> > initialize_maze() {
     return maze;
 }
 
-void print_maze(int size, std::vector<std::vector<MazeCell> > maze) {
+void print_maze(int size, vector<vector<MazeCell> > maze) {
     int iStart, jStart, iEnd, jEnd;
 
-    std::cout << ".";
+    cout << ".";
     for (int i = 0; i < size; i++) {
-        std::cout << "_.";
+        cout << "_.";
     }
-    std::cout << '\n';
+    cout << '\n';
 
     for (int i = 0; i < size; i++) {
-        std::cout << "|";
+        cout << "|";
         for (int j = 0; j < size; j++) {
             if (maze[i][j].down == 0) {
-                std::cout << "_";
+                cout << "_";
             } else {
-                std::cout << " ";
+                cout << " ";
             }
 
             if (maze[i][j].right == 0) {
-                std::cout << "|";
+                cout << "|";
             } else {
-                std::cout << ".";
+                cout << ".";
             }
 
             if (maze[i][j].isStart) {
@@ -511,45 +485,45 @@ void print_maze(int size, std::vector<std::vector<MazeCell> > maze) {
                 jEnd = j;
             }
         }
-        std::cout << '\n';
+        cout << '\n';
     }
 
-    std::cout << "\nStart coordinates: (" << iStart << ", " << jStart << ").\n";
-    std::cout << "End coordinates:   (" << iEnd << ", " << jEnd << ").\n";
+    cout << "\nStart coordinates: (" << iStart << ", " << jStart << ").\n";
+    cout << "End coordinates:   (" << iEnd << ", " << jEnd << ").\n";
     return;
 }
 
 // Makes use of unicode, might not work in every terminal.
-void print_optimal_actions(std::vector<std::vector<CellValue> > mazeValues) {
+void print_optimal_actions(vector<vector<CellValue> > mazeValues) {
     for (int i = 0; i < mazeValues.size(); i++) {
         for (int j = 0; j < mazeValues.size(); j++) {
             int index = findOptimalAction(mazeValues[i][j].actions, 4);
             switch(index) {
                 case 0:
-                    std::cout << " ↑";
+                    cout << " ↑";
                     break;
                 case 1:
-                    std::cout << " ↓";
+                    cout << " ↓";
                     break;
                 case 2:
-                    std::cout << " ←";
+                    cout << " ←";
                     break;
                 case 3:
-                    std::cout << " →";
+                    cout << " →";
                     break;
                 default:
-                    std::cout << " .";
+                    cout << " .";
             }
         }
-        std::cout << '\n';
+        cout << '\n';
     }
 }
 
-std::vector<std::string> split(std::string strToSplit, char delimiter) {
-    std::stringstream ss(strToSplit);
-    std::string item;
-    std::vector<std::string> splittedStrings;
-    while (std::getline(ss, item, delimiter)) {
+vector<string> split(string strToSplit, char delimiter) {
+    stringstream ss(strToSplit);
+    string item;
+    vector<string> splittedStrings;
+    while (getline(ss, item, delimiter)) {
         splittedStrings.push_back(item);
     }
     return splittedStrings;
