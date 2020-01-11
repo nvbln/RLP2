@@ -40,7 +40,7 @@ struct Agent {
 };
 
 void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes);
-int chooseAction(MazeCell cell, CellValue values);
+int chooseAction(MazeCell cell, CellValue values, int episode);
 int findOptimalAction(double values[], int length);
 std::vector<std::string> split(std::string strToSplit, char delimiter);
 std::vector<std::vector<MazeCell>> initialize_maze();
@@ -48,8 +48,8 @@ void print_maze(int size, std::vector<std::vector<MazeCell>> maze);
 void print_optimal_actions(std::vector<std::vector<CellValue>> mazeValues);
 
 double alpha = 0.1;
-double ygamma = 1;
-double greedyEpsilon = 0.1;
+double ygamma = 0.7;
+double greedyEpsilon = 0.4;
 
 int main(int argc, const char * argv[]) {
     std::vector<std::vector<MazeCell>> maze;
@@ -57,7 +57,7 @@ int main(int argc, const char * argv[]) {
     
     print_maze(maze.size(), maze);
     
-    sarsa(maze, 1000);
+    sarsa(maze, 10000);
     
     return 0;
 }
@@ -97,26 +97,35 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
         }
     }
 
+    std::cout << "\nInitial (random) optimal actions:\n";
+    print_optimal_actions(mazeValues);
+    std::cout << '\n';
+
+    // Keep track of best and worst performance.
+    int maxSteps = 0;
+    int minSteps = 276447231; // Highest possible int without overflow.
+
     for (int i = 0; i < episodes; i++) {
+        int step = 0;
+
+        std::cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+
         // Choose initial cell and action.
         currentCell = startCell;
         int actionIndex = chooseAction(currentCell, 
-                          mazeValues[currentCell.x][currentCell.y]);
-        std::cout << "Current coordinates: (" << currentCell.x << ", " << currentCell.y << ")\n";
-        std::cout << "End cell coordinates: (" << endCell.x << ", " << endCell.y << ")\n";
-        while (currentCell.x != endCell.x && currentCell.y != endCell.y) {
+                          mazeValues[currentCell.x][currentCell.y],
+                          i);
+        while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            step++;
             MazeCell newCell;
-            std::cout << "actionIndex: " << actionIndex << '\n';
             switch(actionIndex) {
                 case 0:
                     // Up     
-                    newCell = maze[currentCell.x + 1][currentCell.y];
+                    newCell = maze[currentCell.x - 1][currentCell.y];
                     break;
                 case 1:
                     // Down
-                    if (currentCell.x != 0) {
-                        newCell = maze[currentCell.x - 1][currentCell.y];
-                    }
+                    newCell = maze[currentCell.x + 1][currentCell.y];
                     break;
                 case 2:
                     // Left
@@ -133,7 +142,7 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
                     newCell = currentCell;
             }
 
-            int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y]);
+            int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i);
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex] 
@@ -143,65 +152,71 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
 
             currentCell = newCell;
             actionIndex = newActionIndex;
-            std::cout << "Current coordinates: (" << currentCell.x << ", " << currentCell.y << ")\n";
         }
+
+        if (step > maxSteps) {
+            maxSteps = step;
+        } else if (step < minSteps) {
+            minSteps = step;
+        }
+
+        // Report number of steps.
+        std::cout << "Number of steps: " << step << '\n';
     }
 
+    std::cout << '\n';
     print_optimal_actions(mazeValues);
+    print_maze(maze.size(), maze);
+
+    std::cout << "\nMax steps: " << maxSteps << '\n';
+    std::cout << "Min steps: " << minSteps << '\n';
 }
 
-int chooseAction(MazeCell cell, CellValue values) {
+int chooseAction(MazeCell cell, CellValue values, int episode) {
     int optimalAction = findOptimalAction(values.actions, 4);
 
     int possibleActions = 0;
 
     if (cell.up) {
-       std::cout << "what?";
        possibleActions++;
     }
 
     if (cell.down) {
-       std::cout << "what?";
        possibleActions++;
     }
 
     if (cell.left) {
-       std::cout << "what?";
        possibleActions++;
     }
 
     if (cell.right) {
-       std::cout << "what?";
        possibleActions++;
     }
 
     double number = (double) rand() / (double) RAND_MAX;
-    if (number <= 1 - greedyEpsilon) {
-        std::cout << "Optimal";
+    if (number <= 1 - (greedyEpsilon * (1 / exp(0.0001 * episode)))) {
         return optimalAction;
     } else {
         int action = floor(possibleActions * ((double) rand() / (double) RAND_MAX));
         switch(action) {
             case 0:
                 if (cell.up) {
-                    std::cout << "here0";
                     return 0;
                 }
             case 1:
                 if (cell.down) {
-                    std::cout << "here1";
                     return 1;
                 }
             case 2:
                 if (cell.left) {
-                    std::cout << "here2";
                     return 2;
                 }
             case 3:
-                std::cout << "here3";
                 return 3;
             default: return optimalAction;
         }
+
+        std::cout << '\n';
     }
 }
 
@@ -327,7 +342,7 @@ void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
         std::cout << '\n';
     }
 
-    std::cout << "Start coordinates: (" << iStart << ", " << jStart << ").\n";
+    std::cout << "\nStart coordinates: (" << iStart << ", " << jStart << ").\n";
     std::cout << "End coordinates:   (" << iEnd << ", " << jEnd << ").\n";
     return;
 }
