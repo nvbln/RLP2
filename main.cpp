@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <random>
 
+using namespace std;
+
 struct MazeCell {
     bool isStart;
     bool isEnd;
@@ -39,30 +41,32 @@ struct Agent {
     
 };
 
-void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes);
-int chooseAction(MazeCell cell, CellValue values, int episode);
+void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon);
+void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon);
+int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
 int findOptimalAction(double values[], int length);
 std::vector<std::string> split(std::string strToSplit, char delimiter);
-std::vector<std::vector<MazeCell>> initialize_maze();
-void print_maze(int size, std::vector<std::vector<MazeCell>> maze);
-void print_optimal_actions(std::vector<std::vector<CellValue>> mazeValues);
+std::vector<std::vector<MazeCell> > initialize_maze();
+void print_maze(int size, std::vector<std::vector<MazeCell> > maze);
+void print_optimal_actions(std::vector<std::vector<CellValue> > mazeValues);
 
 double alpha = 0.1;
 double ygamma = 0.7;
-double greedyEpsilon = 0.4;
+
 
 int main(int argc, const char * argv[]) {
-    std::vector<std::vector<MazeCell>> maze;
+    double greedyEpsilon = 0.4;
+    std::vector<std::vector<MazeCell> > maze;
     maze = initialize_maze();
     
     print_maze(maze.size(), maze);
     
-    sarsa(maze, 10000);
+    qlearning(maze, 10000, greedyEpsilon);
     
     return 0;
 }
 
-void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
+void sarsa(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     MazeCell startCell, endCell, currentCell;
 
     // Random generator
@@ -70,7 +74,7 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
     std::uniform_real_distribution<double> distribution(0.0,1.0);
 
     // Create a matrix containing random state-action values.
-    std::vector<std::vector<CellValue>> mazeValues(maze.size(), 
+    std::vector<std::vector<CellValue> > mazeValues(maze.size(),
             std::vector<CellValue>(maze.size()));
     for (int i = 0; i < maze.size(); i++) {
         for (int j = 0; j < maze.size(); j++) {
@@ -112,12 +116,14 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
 
         // Choose initial cell and action.
         currentCell = startCell;
-        int actionIndex = chooseAction(currentCell, 
-                          mazeValues[currentCell.x][currentCell.y],
-                          i);
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
             step++;
             MazeCell newCell;
+            
+            int actionIndex = chooseAction(currentCell,
+            mazeValues[currentCell.x][currentCell.y],
+            i, greedyEpsilon);
+            
             switch(actionIndex) {
                 case 0:
                     // Up     
@@ -142,7 +148,7 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
                     newCell = currentCell;
             }
 
-            int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i);
+            int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, greedyEpsilon);
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex] 
@@ -172,9 +178,161 @@ void sarsa(std::vector<std::vector<MazeCell>> maze, int episodes) {
     std::cout << "Min steps: " << minSteps << '\n';
 }
 
-int chooseAction(MazeCell cell, CellValue values, int episode) {
-    int optimalAction = findOptimalAction(values.actions, 4);
+void qlearning(std::vector<std::vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
+    MazeCell startCell, endCell, currentCell;
 
+    // Random generator
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(0.0,1.0);
+
+    // Create a matrix containing random state-action values.
+    std::vector<std::vector<CellValue> > mazeValues(maze.size(),
+            std::vector<CellValue>(maze.size()));
+    for (int i = 0; i < maze.size(); i++) {
+        for (int j = 0; j < maze.size(); j++) {
+            // Give every action a random value.
+            if (maze[i][j].up) {
+                mazeValues[i][j].actions[0] = distribution(generator);
+            }
+            if (maze[i][j].down) {
+                mazeValues[i][j].actions[1] = distribution(generator);
+            }
+            if (maze[i][j].left) {
+                mazeValues[i][j].actions[2] = distribution(generator);
+            }
+            if (maze[i][j].right) {
+                mazeValues[i][j].actions[3] = distribution(generator);
+            }
+
+            // Store the coordinates of the terminal states.
+            if (maze[i][j].isStart) {
+                startCell = maze[i][j];
+            } else if (maze[i][j].isEnd) {
+                endCell = maze[i][j];
+            }
+        }
+    }
+
+    std::cout << "\nInitial (random) optimal actions:\n";
+    print_optimal_actions(mazeValues);
+    std::cout << '\n';
+
+    // Keep track of best and worst performance.
+    int maxSteps = 0;
+    int minSteps = 276447231; // Highest possible int without overflow.
+    int size = maze.size();
+
+    for (int i = 0; i < episodes; i++) {
+        int step = 0;
+cout << size <<(1 / exp((0.0001 * i))) ;
+        std::cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+        
+        // Choose initial cell and action.
+        currentCell = startCell;
+
+        while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            step++;
+            MazeCell newCell;
+
+            if (currentCell.x == 9 || currentCell.x == 0 || currentCell.y == 9 || currentCell.y == 0){
+                //break;
+            }
+            
+            int actionIndex = chooseAction(currentCell,
+                              mazeValues[currentCell.x][currentCell.y],
+                              i, greedyEpsilon);
+            //cout << currentCell.x<<' '<<currentCell.y ;
+            //cout << actionIndex;
+
+            switch(actionIndex) {
+                case 0:
+                    // Up
+                    if (currentCell.x != 0) {
+                    newCell = maze[currentCell.x-1][currentCell.y];
+                    }
+                    break;
+                case 1:
+                    // Down
+                    if (currentCell.x != size - 1) {
+                    newCell = maze[currentCell.x+1][currentCell.y];
+                    } else {cout <<'\n'<< currentCell.x<<' '<<currentCell.y<<'\n' ;
+                        cout << actionIndex<<'\n';
+                                           return;
+                                       }
+
+                    break;
+                case 2:
+                    // Left
+                    if (currentCell.y != 0) {
+                        newCell = maze[currentCell.x][currentCell.y-1];
+                    } else {
+                                           return;
+                                       }
+
+                    break;
+                case 3:
+                    // Right
+                    if (currentCell.y != size - 1) {
+                    newCell = maze[currentCell.x][currentCell.y+1];
+                    }
+                    break;
+                default:
+                    // This should never happen.
+                    newCell = currentCell;
+            }
+
+            int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, 0);
+
+            // Update the state-action value.
+            mazeValues[currentCell.x][currentCell.y].actions[actionIndex]
+                    += alpha * (newCell.reward
+                    + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
+                    - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
+
+            currentCell = newCell;
+        }
+
+        if (step > maxSteps) {
+            maxSteps = step;
+        } else if (step < minSteps) {
+            minSteps = step;
+        }
+
+        // Report number of steps.
+        std::cout << "Number of steps: " << step << '\n';
+    }
+
+    std::cout << '\n';
+    print_optimal_actions(mazeValues);
+    print_maze(maze.size(), maze);
+
+    std::cout << "\nMax steps: " << maxSteps << '\n';
+    std::cout << "Min steps: " << minSteps << '\n';
+}
+
+int chooseAction(MazeCell cell, CellValue values, int episode,double greedyEpsilon) {
+    int optimalAction = findOptimalAction(values.actions, 4);
+    //cout <<cell.x << cell.y<< ' '<< optimalAction<<' '<<cell.up <<' '<<cell.down<<' '<<cell.left<<' '<<cell.right;
+    if (!cell.up && optimalAction == 0) {
+        optimalAction = 1;
+    }
+    if (!cell.down && optimalAction == 1) {
+        optimalAction = 2;
+    }
+    if (!cell.left && optimalAction == 2) {
+        optimalAction = 3;
+    }
+    if (!cell.right && optimalAction == 3) {
+        optimalAction = 0;
+    }
+    if (!cell.up && optimalAction == 0) {
+        optimalAction = 1;
+    }
+    if (!cell.down && optimalAction == 1) {
+        optimalAction = 2;
+    }
+    //cout <<'\n'<<cell.x << cell.y<< ' '<< optimalAction<<' '<<cell.up <<' '<<cell.down<<' '<<cell.left<<' '<<cell.right;
+    
     int possibleActions = 0;
 
     if (cell.up) {
@@ -195,21 +353,35 @@ int chooseAction(MazeCell cell, CellValue values, int episode) {
 
     double number = (double) rand() / (double) RAND_MAX;
     if (number <= 1 - (greedyEpsilon * (1 / exp(0.0001 * episode)))) {
+        //cout <<'\n'<<"GGG"<<optimalAction <<'\n';
         return optimalAction;
     } else {
         int action = floor(possibleActions * ((double) rand() / (double) RAND_MAX));
+        //cout <<'\n'<<"GGG"<<action <<'\n';
         switch(action) {
             case 0:
                 if (cell.up) {
                     return 0;
+                } else if (cell.down) {
+                    return 1;
+                }  else if (cell.left) {
+                   return 2;
+                }  else if (cell.right) {
+                   return 3;
                 }
             case 1:
                 if (cell.down) {
                     return 1;
+                }  else if (cell.left) {
+                   return 2;
+                }  else if (cell.right) {
+                   return 3;
                 }
             case 2:
                 if (cell.left) {
                     return 2;
+                }  else if (cell.right) {
+                   return 3;
                 }
             case 3:
                 return 3;
@@ -233,13 +405,13 @@ int findOptimalAction(double values[], int length) {
     return optimalAction;
 }
 
-std::vector<std::vector<MazeCell>> initialize_maze() {
+std::vector<std::vector<MazeCell> > initialize_maze() {
     // Get the size of the maze.
     std::ifstream inFile("maze-generator/maze_export");
     int count = std::count(std::istreambuf_iterator<char>(inFile),
                std::istreambuf_iterator<char>(), '\n');
 
-    std::vector<std::vector<MazeCell>> maze(std::sqrt(count),
+    std::vector<std::vector<MazeCell> > maze(std::sqrt(count),
                                             std::vector<MazeCell>(std::sqrt(count)));
 
     std::ifstream in("maze-generator/maze_export");
@@ -307,7 +479,7 @@ std::vector<std::vector<MazeCell>> initialize_maze() {
     return maze;
 }
 
-void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
+void print_maze(int size, std::vector<std::vector<MazeCell> > maze) {
     int iStart, jStart, iEnd, jEnd;
 
     std::cout << ".";
@@ -348,7 +520,7 @@ void print_maze(int size, std::vector<std::vector<MazeCell>> maze) {
 }
 
 // Makes use of unicode, might not work in every terminal.
-void print_optimal_actions(std::vector<std::vector<CellValue>> mazeValues) {
+void print_optimal_actions(std::vector<std::vector<CellValue> > mazeValues) {
     for (int i = 0; i < mazeValues.size(); i++) {
         for (int j = 0; j < mazeValues.size(); j++) {
             int index = findOptimalAction(mazeValues[i][j].actions, 4);
