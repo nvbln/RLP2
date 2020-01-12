@@ -53,7 +53,6 @@ void print_optimal_actions(vector<vector<CellValue> > mazeValues);
 double alpha = 0.1;
 double ygamma = 0.7;
 
-
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
     vector<vector<MazeCell> > maze;
