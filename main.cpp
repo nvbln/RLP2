@@ -166,7 +166,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
                 // Deduct the reward times 2.
-                reward = newCell.reward - (1999 * defaultDistractionReward);
+                reward = newCell.reward - (2 * defaultDistractionReward * rewardTaken);
             } else {
                 reward = newCell.reward;
             }
