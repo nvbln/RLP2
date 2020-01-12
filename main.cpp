@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <stdio.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -14,6 +15,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+
 
 using namespace std;
 
@@ -51,7 +53,7 @@ int findOptimalAction(double values[], int length);
 vector<string> split(string strToSplit, char delimiter);
 vector<vector<MazeCell> > initialize_maze();
 void print_maze(int size, vector<vector<MazeCell> > maze);
-void print_optimal_actions(vector<vector<CellValue> > mazeValues);
+void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
 
 double alpha = 0.1;
 double ygamma = 0.9;
@@ -60,17 +62,19 @@ double defaultDistractionReward = 50;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
+    
     vector<vector<MazeCell> > maze;
+    
     maze = initialize_maze();
     
     print_maze(maze.size(), maze);
     
-    qlearning(maze, 10000, greedyEpsilon);
+    sarsa(maze, 10000, greedyEpsilon);
     
     return 0;
 }
 
-void sarsa(vector<vector<MazeCell>> maze, int episodes, double greedyEpsilon) {
+void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     MazeCell startCell, endCell, currentCell;
 
     // Random generator
@@ -106,7 +110,7 @@ void sarsa(vector<vector<MazeCell>> maze, int episodes, double greedyEpsilon) {
     }
 
     cout << "\nInitial (random) optimal actions:\n";
-    print_optimal_actions(mazeValues);
+    print_optimal_actions(maze.size(), maze, mazeValues);
     cout << '\n';
 
     // Keep track of best and worst performance.
@@ -117,7 +121,7 @@ void sarsa(vector<vector<MazeCell>> maze, int episodes, double greedyEpsilon) {
         int step = 0;
         int rewardTaken = 0;
 
-        cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+        //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
 
         // Choose initial cell and action.
         currentCell = startCell;
@@ -182,14 +186,14 @@ void sarsa(vector<vector<MazeCell>> maze, int episodes, double greedyEpsilon) {
         }
 
         // Report whether the distraction reward was taken.
-        cout << "Reward taken: " << rewardTaken << '\n';
+        //cout << "Reward taken: " << rewardTaken << '\n';
 
         // Report number of steps.
-        cout << "Number of steps: " << step << '\n';
+        //cout << "Number of steps: " << step << '\n';
     }
 
     cout << '\n';
-    print_optimal_actions(mazeValues);
+    print_optimal_actions(maze.size(), maze, mazeValues);
     print_maze(maze.size(), maze);
 
     cout << "\nMax steps: " << maxSteps << '\n';
@@ -232,7 +236,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     }
 
     cout << "\nInitial (random) optimal actions:\n";
-    print_optimal_actions(mazeValues);
+    print_optimal_actions(maze.size(), maze, mazeValues);
     cout << '\n';
 
     // Keep track of best and worst performance.
@@ -244,7 +248,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
         int step = 0;
         int rewardTaken = 0;
         
-        cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
+        //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
         
         // Choose initial cell and action.
         currentCell = startCell;
@@ -309,14 +313,14 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
         }
 
         // Report whether the distraction reward was taken.
-        cout << "Reward taken: " << rewardTaken << '\n';
+        //cout << "Reward taken: " << rewardTaken << '\n';
 
         // Report number of steps.
-        cout << "Number of steps: " << step << '\n';
+        //cout << "Number of steps: " << step << '\n';
     }
 
     cout << '\n';
-    print_optimal_actions(mazeValues);
+    print_optimal_actions(maze.size(), maze, mazeValues);
     print_maze(maze.size(), maze);
 
     cout << "\nMax steps: " << maxSteps << '\n';
@@ -542,25 +546,66 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
 }
 
 // Makes use of unicode, might not work in every terminal.
-void print_optimal_actions(vector<vector<CellValue> > mazeValues) {
+void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues) {
+    cout << ".";
+    for (int i = 0; i < size; i++) {
+        cout << "_.";
+    }
+    cout << '\n';
+    
+    string color_start = "\033[4;31m"; //\031[4m"; // black
+    string color_end = "\033[0m"; //\031[0m";
+    
     for (int i = 0; i < mazeValues.size(); i++) {
+        cout << "|";
         for (int j = 0; j < mazeValues.size(); j++) {
+            string arrow;
             int index = findOptimalAction(mazeValues[i][j].actions, 4);
             switch(index) {
                 case 0:
-                    cout << " ↑";
+                    arrow = "↑";
                     break;
                 case 1:
-                    cout << " ↓";
+                    arrow = "↓";
                     break;
                 case 2:
-                    cout << " ←";
+                    arrow = "←";
                     break;
                 case 3:
-                    cout << " →";
+                    arrow = "→";
                     break;
                 default:
-                    cout << " .";
+                    arrow = ".";
+            }
+            
+            if (maze[i][j].isDistractor) {
+                if (maze[i][j].down == 0) {
+                    arrow = "\033[4;31m" + arrow + "\033[0m";
+                } else {
+                    arrow = "\033[31m" + arrow + "\033[0m";
+                }
+            } else if (maze[i][j].isEnd) {
+                if (maze[i][j].down == 0) {
+                    arrow = "\033[4;32m" + arrow + "\033[0m";
+                } else {
+                    arrow = "\033[32m" + arrow + "\033[0m";
+                }
+            } else if (maze[i][j].isStart) {
+                if (maze[i][j].down == 0) {
+                    arrow = "\033[4;34m" + arrow + "\033[0m";
+                } else {
+                    arrow = "\033[34m" + arrow + "\033[0m";
+                }
+            } else if (maze[i][j].down == 0) {
+                arrow = "\033[4m" + arrow + "\033[0m";
+            }
+            
+            cout << arrow;
+            
+            if (maze[i][j].right == 0) {
+                cout << "|";
+            } else {
+                cout << ".";
             }
         }
         cout << '\n';
