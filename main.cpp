@@ -59,6 +59,7 @@ double alpha = 0.1;
 double ygamma = 0.9;
 double defaultReward = 0;
 double defaultDistractionReward = 50;
+double penaltyFactor = -1;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
@@ -69,7 +70,12 @@ int main(int argc, const char * argv[]) {
     
     print_maze(maze.size(), maze);
     
+    cout << "Sarsa\n";
     sarsa(maze, 10000, greedyEpsilon);
+    
+    maze = initialize_maze();
+    cout << "Q-Learning\n";
+    qlearning(maze, 10000, greedyEpsilon);
     
     return 0;
 }
@@ -165,8 +171,8 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
                 rewardTaken = 1;
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
-                // Deduct the reward times 2.
-                reward = newCell.reward - (2 * defaultDistractionReward * rewardTaken);
+                // Deduct the reward times penalty factor.
+                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
             } else {
                 reward = newCell.reward;
             }
@@ -293,8 +299,8 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
                 rewardTaken = 1;
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
-                // Deduct the reward times 2.
-                reward = newCell.reward - (1999 * defaultDistractionReward);
+                // Deduct the reward times penalty factor.
+                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
             } else {
                 reward = newCell.reward;
             }
