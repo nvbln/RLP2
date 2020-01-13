@@ -23,7 +23,7 @@ struct MazeCell {
     bool isStart;
     bool isEnd;
     bool isDistractor;
-    int rewardTaken;
+    bool rewardTaken;
     bool up;
     bool down;
     bool left;
@@ -59,7 +59,7 @@ double alpha = 0.1;
 double ygamma = 0.9;
 double defaultReward = 0;
 double defaultDistractionReward = 50;
-double penaltyFactor = -1;
+double penaltyFactor = 199;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
@@ -88,7 +88,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     uniform_real_distribution<double> distribution(0.0,1.0);
 
     // Create a matrix containing random state-action values.
-    vector<vector<CellValue> > mazeValues(maze.size(),
+    vector<vector<CellValue>> mazeValues(maze.size(),
             vector<CellValue>(maze.size()));
     for (int i = 0; i < maze.size(); i++) {
         for (int j = 0; j < maze.size(); j++) {
@@ -122,10 +122,20 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     // Keep track of best and worst performance.
     int maxSteps = 0;
     int minSteps = 276447231; // Highest possible int without overflow.
+    int maxReward = 0;
+    int maxRewardSteps = 0;
 
     for (int i = 0; i < episodes; i++) {
-        int step = 0;
+        int totalReward = 0;
         int rewardTaken = 0;
+        int step = 0;
+
+        // Set all distractors to false again.
+        for (int j = 0; j < maze.size(); j++) {
+            for (int k = 0; k < maze.size(); k++) {
+                maze[j][k].rewardTaken = false;
+            }
+        }
 
         //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
 
@@ -165,13 +175,17 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
             // Update the state-action value.
             double reward;
-            if (newCell.isDistractor && !(newCell.rewardTaken == i)) {
+            if (newCell.isDistractor && !(newCell.rewardTaken)) {
                 reward = newCell.distractionReward;
-                maze[newCell.x][newCell.y].rewardTaken++;
+                maze[newCell.x][newCell.y].rewardTaken = true;
                 rewardTaken = 1;
+                //std::cout << "here?" << i;
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
                 // Deduct the reward times penalty factor.
+                if (rewardTaken == 0) {
+                    std::cout << "Got the full reward!\n";
+                }
                 reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
             } else {
                 reward = newCell.reward;
@@ -183,6 +197,12 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
             currentCell = newCell;
             actionIndex = newActionIndex;
+
+            totalReward += reward;
+        }
+
+        if (rewardTaken == 0) {
+            //std::cout << "No reward taken!\n";
         }
 
         if (step > maxSteps) {
@@ -190,6 +210,15 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
         } else if (step < minSteps) {
             minSteps = step;
         }
+
+        if (totalReward > maxReward) {
+            maxReward = totalReward;
+            maxRewardSteps = step;
+        }
+
+
+        // Report the total reward.
+        //cout << "Total reward: " << totalReward << '\n';
 
         // Report whether the distraction reward was taken.
         //cout << "Reward taken: " << rewardTaken << '\n';
@@ -204,6 +233,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
+    cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
 }
 
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
@@ -249,10 +279,20 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     int maxSteps = 0;
     int minSteps = 276447231; // Highest possible int without overflow.
     int size = maze.size();
+    int maxReward = 0;
+    int maxRewardSteps = 0;
 
     for (int i = 0; i < episodes; i++) {
-        int step = 0;
+        int totalReward = 0;
         int rewardTaken = 0;
+        int step = 0;
+
+        // Set all distractors to false again.
+        for (int j = 0; j < maze.size(); j++) {
+            for (int k = 0; k < maze.size(); k++) {
+                maze[j][k].rewardTaken = false;
+            }
+        }
         
         //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
         
@@ -293,9 +333,9 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
             // Update the state-action value.
             double reward;
-            if (newCell.isDistractor && !(newCell.rewardTaken == i)) {
+            if (newCell.isDistractor && !(newCell.rewardTaken)) {
                 reward = newCell.distractionReward;
-                maze[newCell.x][newCell.y].rewardTaken++;
+                maze[newCell.x][newCell.y].rewardTaken = true;
                 rewardTaken = 1;
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
@@ -310,6 +350,12 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
             currentCell = newCell;
+
+            totalReward += reward;
+        }
+
+        if (rewardTaken == 0) {
+            //std::cout << "No reward taken!\n";
         }
 
         if (step > maxSteps) {
@@ -317,6 +363,14 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
         } else if (step < minSteps) {
             minSteps = step;
         }
+
+        if (totalReward > maxReward) {
+            maxReward = totalReward;
+            maxRewardSteps = step;
+        }
+
+        // Report the total reward.
+        // cout << "Total reward: " << totalReward << '\n';
 
         // Report whether the distraction reward was taken.
         //cout << "Reward taken: " << rewardTaken << '\n';
@@ -331,6 +385,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
+    cout << "Max reward: " << maxReward << "and steps: " << maxRewardSteps << '\n';
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
@@ -491,7 +546,7 @@ vector<vector<MazeCell> > initialize_maze() {
 
             if (stoi(splittedString[8]) == 1) {
                 cell.isDistractor = true;
-                cell.rewardTaken = -1;
+                cell.rewardTaken = false;
 
                 // Set a distractor reward.
                 cell.distractionReward = defaultDistractionReward;
@@ -615,6 +670,14 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
             }
         }
         cout << '\n';
+    }
+
+    for (int i = 0; i < mazeValues.size(); i++) {
+        for (int j = 0; j < mazeValues.size(); j++) {
+            int index = findOptimalAction(mazeValues[i][j].actions, 4);
+            std::cout << mazeValues[i][j].actions[index] << " ";
+        }
+        std::cout << '\n';
     }
 }
 
