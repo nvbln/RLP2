@@ -58,8 +58,9 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
 double alpha = 0.1;
 double ygamma = 0.9;
 double defaultReward = 0;
-double defaultDistractionReward = 50;
-double penaltyFactor = 199;
+double defaultDistractionReward = 0;
+double penaltyFactor = 0;
+double finalReward = 100;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
@@ -184,7 +185,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
                 // The next cell is the terminal state.
                 // Deduct the reward times penalty factor.
                 if (rewardTaken == 0) {
-                    std::cout << "Got the full reward!\n";
+                    //std::cout << "Got the full reward!\n";
                 }
                 reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
             } else {
@@ -199,6 +200,12 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             actionIndex = newActionIndex;
 
             totalReward += reward;
+
+            if (currentCell.x == 9 && currentCell.y == 2) {
+                //print_optimal_actions(maze.size(), maze, mazeValues);
+                //print_maze(maze.size(), maze);
+                //return;
+            }
         }
 
         if (rewardTaken == 0) {
@@ -233,7 +240,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
-    cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
+    //cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
 }
 
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
@@ -385,7 +392,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
-    cout << "Max reward: " << maxReward << "and steps: " << maxRewardSteps << '\n';
+    //cout << "Max reward: " << maxReward << "and steps: " << maxRewardSteps << '\n';
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
@@ -539,7 +546,7 @@ vector<vector<MazeCell> > initialize_maze() {
                 cell.isEnd = true;
 
                 // Set a finish reward.
-                cell.reward = 1000000;
+                cell.reward = finalReward;
             } else {
                 cell.isEnd = false;
             }
@@ -675,9 +682,9 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
     for (int i = 0; i < mazeValues.size(); i++) {
         for (int j = 0; j < mazeValues.size(); j++) {
             int index = findOptimalAction(mazeValues[i][j].actions, 4);
-            std::cout << mazeValues[i][j].actions[index] << " ";
+            //std::cout << mazeValues[i][j].actions[index] << " ";
         }
-        std::cout << '\n';
+        //std::cout << '\n';
     }
 }
 
