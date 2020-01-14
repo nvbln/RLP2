@@ -44,7 +44,7 @@ struct CellValue {
 void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
-int findOptimalAction(double values[], int length);
+int findOptimalAction(double values[], MazeCell c, int length);
 void reset_distractors(vector<vector<MazeCell> > &maze);
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
@@ -58,13 +58,13 @@ int seed = 0;
 double alpha = 0.1;
 double ygamma = 0.9;
 double defaultReward = 0;
-double defaultDistractionReward = 0;
-double penaltyFactor = 0;
+double defaultDistractionReward = 20;
+double penaltyFactor = 3;
 double finalReward = 100;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
-    bool includeDistractions = 0;
+    bool includeDistractions = 1;
     
     vector<vector<MazeCell> > maze;
     
@@ -102,9 +102,10 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     int minSteps = 276447231; // Highest possible int without overflow.
     int maxReward = 0;
     int maxRewardSteps = 0;
+    double finalReward = 0;
 
     for (int i = 0; i < episodes; i++) {
-        int totalReward = 0;
+        double totalReward = 0;
         int rewardTaken = 0;
         int step = 0;
 
@@ -148,6 +149,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             actionIndex = newActionIndex;
 
             totalReward += reward;
+
         }
 
         if (step > maxSteps) {
@@ -162,6 +164,8 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
                 maxRewardSteps = step;
             }
         }
+        
+        finalReward += totalReward;
         
         if (i + 1 == episodes) {
             // Report the total reward.
@@ -182,6 +186,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
+    cout << "Final reward: " << finalReward << '\n';
 }
 
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
@@ -198,6 +203,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     int size = maze.size();
     int maxReward = 0;
     int maxRewardSteps = 0;
+    int finalReward = 0;
 
     for (int i = 0; i < episodes; i++) {
         int totalReward = 0;
@@ -258,6 +264,8 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
                 maxRewardSteps = step;
             }
         }
+        
+        finalReward += totalReward;
 
         if (i + 1 == episodes) {
             // Report the total reward.
@@ -278,29 +286,11 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
+    cout << "Final reward: " << finalReward << '\n';
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
-    int optimalAction = findOptimalAction(values.actions, 4);
-    
-    if (!cell.up && optimalAction == 0) {
-        optimalAction = 1;
-    }
-    if (!cell.down && optimalAction == 1) {
-        optimalAction = 2;
-    }
-    if (!cell.left && optimalAction == 2) {
-        optimalAction = 3;
-    }
-    if (!cell.right && optimalAction == 3) {
-        optimalAction = 0;
-    }
-    if (!cell.up && optimalAction == 0) {
-        optimalAction = 1;
-    }
-    if (!cell.down && optimalAction == 1) {
-        optimalAction = 2;
-    }
+    int optimalAction = findOptimalAction(values.actions, cell, 4);
     
     int possibleActions = 0;
 
@@ -359,15 +349,45 @@ int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsi
     }
 }
 
-int findOptimalAction(double values[], int length) {
-    int optimalAction = 0;
-    int highestValue = 0;
-    for (int i = 0; i < length; i++) {
-        if (values[i] > highestValue) {
-            highestValue = values[i];
-            optimalAction = i;
-        }
+int findOptimalAction(double values[], MazeCell c, int length) {
+    int optimalAction;
+    int highestValue;
+    if (c.up) {
+        optimalAction = 0;
+        highestValue = values[0];
+    } else if (c.down) {
+        optimalAction = 1;
+        highestValue = values[1];
+    } else if (c.left) {
+        optimalAction = 2;
+        highestValue = values[2];
+    } else if (c.right) {
+        optimalAction = 3;
+        highestValue = values[3];
     }
+    
+    if (values[0] > highestValue && c.up) {
+        highestValue = values[0];
+        optimalAction = 0;
+    }
+    if (values[1] > highestValue && c.down) {
+        highestValue = values[1];
+        optimalAction = 1;
+    }
+    if (values[2] > highestValue && c.left) {
+        highestValue = values[2];
+        optimalAction = 2;
+    }
+    if (values[3] > highestValue && c.right) {
+        highestValue = values[3];
+        optimalAction = 3;
+    }
+   // for (int i = 0; i < length; i++) {
+   //     if (values[i] > highestValue && c) {
+   //         highestValue = values[i];
+   //         optimalAction = i;
+   //     }
+   // }
 
     return optimalAction;
 }
@@ -402,6 +422,7 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
             // This should never happen.
             cout << "Error - Wrong action, see function move(..)\n";
     }
+    cout << "Error - Wrong action, see function move(..)\n";
     return currentCell;
 }
 
@@ -469,7 +490,7 @@ vector<vector<MazeCell> > initialize_maze(bool includeDistractions) {
                 cell.isEnd = false;
             }
 
-            if (!includeDistractions && stoi(splittedString[8]) == 1) {
+            if (stoi(splittedString[8]) == 1 && includeDistractions) {
                 cell.isDistractor = true;
                 cell.rewardTaken = false;
 
@@ -579,7 +600,7 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
         cout << "|";
         for (int j = 0; j < mazeValues.size(); j++) {
             string arrow;
-            int index = findOptimalAction(mazeValues[i][j].actions, 4);
+            int index = findOptimalAction(mazeValues[i][j].actions, maze[i][j], 4);
             switch(index) {
                 case 0:
                     arrow = "↑";
@@ -632,7 +653,7 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
 
     for (int i = 0; i < mazeValues.size(); i++) {
         for (int j = 0; j < mazeValues.size(); j++) {
-            int index = findOptimalAction(mazeValues[i][j].actions, 4);
+            int index = findOptimalAction(mazeValues[i][j].actions, maze[i][j], 4);
             //std::cout << mazeValues[i][j].actions[index] << " ";
         }
         //std::cout << '\n';
