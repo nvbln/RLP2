@@ -49,7 +49,7 @@ void reset_distractors(vector<vector<MazeCell> > &maze);
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
 void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell);
-vector<vector<MazeCell> > initialize_maze();
+vector<vector<MazeCell> > initialize_maze(bool includeDistractions);
 void print_maze(int size, vector<vector<MazeCell> > maze);
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
 
@@ -162,15 +162,17 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
                 maxRewardSteps = step;
             }
         }
+        
+        if (i + 1 == episodes) {
+            // Report the total reward.
+            cout << "Total reward: " << totalReward << '\n';
 
-        // Report the total reward.
-        //cout << "Total reward: " << totalReward << '\n';
+            // Report whether the distraction reward was taken.
+            cout << "Reward taken: " << rewardTaken << '\n';
 
-        // Report whether the distraction reward was taken.
-        //cout << "Reward taken: " << rewardTaken << '\n';
-
-        // Report number of steps.
-        //cout << "Number of steps: " << step << '\n';
+            // Report number of steps.
+            cout << "Number of steps: " << step << '\n';
+        }
     }
 
     cout << '\n';
@@ -257,14 +259,16 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
             }
         }
 
-        // Report the total reward.
-        // cout << "Total reward: " << totalReward << '\n';
+        if (i + 1 == episodes) {
+            // Report the total reward.
+            cout << "Total reward: " << totalReward << '\n';
 
-        // Report whether the distraction reward was taken.
-        //cout << "Reward taken: " << rewardTaken << '\n';
+            // Report whether the distraction reward was taken.
+            cout << "Reward taken: " << rewardTaken << '\n';
 
-        // Report number of steps.
-        //cout << "Number of steps: " << step << '\n';
+            // Report number of steps.
+            cout << "Number of steps: " << step << '\n';
+        }
     }
 
     cout << '\n';
@@ -401,7 +405,7 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
     return currentCell;
 }
 
-vector<vector<MazeCell> > initialize_maze(includeDistractions) {
+vector<vector<MazeCell> > initialize_maze(bool includeDistractions) {
     // Get the size of the maze.
     ifstream inFile("maze-generator/maze_export");
     int count = std::count(istreambuf_iterator<char>(inFile),
