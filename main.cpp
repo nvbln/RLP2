@@ -15,6 +15,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <cmath>
 
 
 using namespace std;
@@ -61,11 +62,12 @@ double defaultReward = 0;
 double defaultDistractionReward = 20;
 double penaltyFactor = 3;
 double finalReward = 100;
-double stepPenalty = 0;
+double stepPenalty = 0; //1
+double minPossibleReward = 0; //30
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
-    bool includeDistractions = 1;
+    bool includeDistractions = 0;
     
     vector<vector<MazeCell> > maze;
     
@@ -136,7 +138,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
                 // Deduct the reward times penalty factor.
-                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken) - (step*stepPenalty);
+                reward = fmax(newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken) - (step*stepPenalty), minPossibleReward);
             } else {
                 reward = newCell.reward;
             }
@@ -239,7 +241,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
             } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
                 // The next cell is the terminal state.
                 // Deduct the reward times penalty factor.
-                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken) - (step*stepPenalty);
+                reward = fmax(newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken) - (step*stepPenalty), minPossibleReward);
             } else {
                 reward = newCell.reward;
             }
