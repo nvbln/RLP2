@@ -64,10 +64,11 @@ double finalReward = 100;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
+    bool includeDistractions = 0;
     
     vector<vector<MazeCell> > maze;
     
-    maze = initialize_maze();
+    maze = initialize_maze(includeDistractions);
     
     print_maze(maze.size(), maze);
     
@@ -76,7 +77,7 @@ int main(int argc, const char * argv[]) {
     
     // RNG seed is the same for both algos
     
-    maze = initialize_maze();
+    maze = initialize_maze(includeDistractions);
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon);
     
@@ -161,7 +162,6 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
                 maxRewardSteps = step;
             }
         }
-
 
         // Report the total reward.
         //cout << "Total reward: " << totalReward << '\n';
@@ -401,7 +401,7 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
     return currentCell;
 }
 
-vector<vector<MazeCell> > initialize_maze() {
+vector<vector<MazeCell> > initialize_maze(includeDistractions) {
     // Get the size of the maze.
     ifstream inFile("maze-generator/maze_export");
     int count = std::count(istreambuf_iterator<char>(inFile),
@@ -465,7 +465,7 @@ vector<vector<MazeCell> > initialize_maze() {
                 cell.isEnd = false;
             }
 
-            if (stoi(splittedString[8]) == 1) {
+            if (!includeDistractions && stoi(splittedString[8]) == 1) {
                 cell.isDistractor = true;
                 cell.rewardTaken = false;
 
