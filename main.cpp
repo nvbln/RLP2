@@ -57,38 +57,39 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
 
 int seed = 0;
 
-double alpha = 0.1;
+double alpha = 0.5;
 double ygamma = 0.9;
 double defaultReward = 0;
 double defaultDistractionReward = 20;
 double penaltyFactor = 3;
 double finalReward = 100;
-double stepPenalty = 0; //1
-double minPossibleReward = 0; //30
+double stepPenalty = 1; //1
+double minPossibleReward = 30; //30
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
-    bool includeDistractions = 0;
+    bool includeDistractions = 1;
     
     vector<vector<MazeCell> > maze;
     
     print_maze(maze.size(), maze);
 
-    string filename = "alpha_parameter";
+    string filename = "penalty_parameter";
     ofstream myfile;
     myfile.open(filename);
-    
-    for (alpha = 0.1; alpha < 1; alpha += 0.1) {
 
-        //cout << "Sarsa\n";
+    myfile << "Algorithm, episodes, rewardTaken, parameter\n";
+    
+    for (penaltyFactor = 0.1; penaltyFactor < 5; penaltyFactor += 0.1) {
+
         maze = initialize_maze(includeDistractions);
-        myfile << "Sarsa, 10000, " << sarsa(maze, 10000, greedyEpsilon) << '\n';
+        myfile << "Sarsa, 10000, " << sarsa(maze, 10000, greedyEpsilon) << ", " << penaltyFactor << '\n';
         
         // RNG seed is the same for both algos
         
         maze = initialize_maze(includeDistractions);
-        cout << "Q-Learning\n";
-        myfile << "Qlearning, 10000, "  << qlearning(maze, 10000, greedyEpsilon) << '\n';
+        //cout << "Q-Learning\n";
+        myfile << "Qlearning, 10000, "  << qlearning(maze, 10000, greedyEpsilon) << ", " << penaltyFactor << '\n';
     }
 
     myfile.close();
@@ -116,6 +117,7 @@ double sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon)
     int maxRewardSteps = 0;
     double finalReward = 0;
     int totalSteps = 0;
+    int totalTimesRewardTaken = 0;
 
     time_t timer1, timer2;
     long startTime = time(&timer1);
@@ -175,6 +177,8 @@ double sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon)
 
         }
 
+        totalTimesRewardTaken += rewardTaken;
+
         totalSteps += step;
 
         if (step > maxSteps) {
@@ -213,7 +217,7 @@ double sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon)
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
     cout << "Final reward: " << finalReward << '\n';
 
-    return totalSteps / episodes;
+    return totalTimesRewardTaken;
 }
 
 double qlearning(vector<vector<MazeCell>> maze, int episodes, double greedyEpsilon) {
@@ -232,6 +236,7 @@ double qlearning(vector<vector<MazeCell>> maze, int episodes, double greedyEpsil
     int maxRewardSteps = 0;
     int finalReward = 0;
     int totalSteps = 0;
+    int totalTimesRewardTaken = 0;
 
     time_t timer1, timer2;
     long startTime = time(&timer1);
@@ -296,6 +301,7 @@ double qlearning(vector<vector<MazeCell>> maze, int episodes, double greedyEpsil
             minSteps = step;
         }
 
+        totalTimesRewardTaken += rewardTaken;
         totalSteps += step;
 
         if (totalReward >= maxReward) {
@@ -326,9 +332,9 @@ double qlearning(vector<vector<MazeCell>> maze, int episodes, double greedyEpsil
     cout << "\nMax steps: " << maxSteps << '\n';
     cout << "Min steps: " << minSteps << '\n';
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
-    cout << "Final reward: t" << finalReward << '\n';
+    cout << "Final reward: " << finalReward << '\n';
 
-    return totalSteps / episodes;
+    return totalTimesRewardTaken;
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
