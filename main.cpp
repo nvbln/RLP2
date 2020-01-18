@@ -188,7 +188,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     qlearningPerformance << "episode, reward\n";
 
     for (int i = 0; i < episodes; i++) {
-        int totalReward = 0;
+        double totalReward = 0;
         int step = 0;
         
         // Choose initial cell and action.
