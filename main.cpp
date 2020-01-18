@@ -22,14 +22,11 @@ using namespace std;
 struct MazeCell {
     bool isStart;
     bool isEnd;
-    bool isDistractor;
-    bool rewardTaken;
     bool up;
     bool down;
     bool left;
     bool right;
     double reward;
-    double distractionReward;
 
     // Location in matrix.
     int x;
@@ -49,7 +46,7 @@ void reset_distractors(vector<vector<MazeCell> > &maze);
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
 void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell);
-vector<vector<MazeCell> > initialize_maze(bool includeDistractions);
+vector<vector<MazeCell> > initialize_maze();
 void print_maze(int size, vector<vector<MazeCell> > maze);
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
 
@@ -58,17 +55,14 @@ int seed = 0;
 double alpha = 0.1;
 double ygamma = 0.9;
 double defaultReward = 0;
-double defaultDistractionReward = 20;
-double penaltyFactor = 3;
 double finalReward = 100;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
-    bool includeDistractions = 1;
     
     vector<vector<MazeCell> > maze;
     
-    maze = initialize_maze(includeDistractions);
+    maze = initialize_maze();
     
     print_maze(maze.size(), maze);
     
@@ -77,7 +71,7 @@ int main(int argc, const char * argv[]) {
     
     // RNG seed is the same for both algos
     
-    maze = initialize_maze(includeDistractions);
+    maze = initialize_maze();
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon);
     
@@ -93,10 +87,6 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     
     random_action_init(mazeValues, maze, startCell, endCell);
 
-    //cout << "\nInitial (random) optimal actions:\n";
-    //print_optimal_actions(maze.size(), maze, mazeValues);
-    //cout << '\n';
-
     // Keep track of best and worst performance.
     int maxSteps = 0;
     int minSteps = 276447231; // Highest possible int without overflow.
@@ -106,13 +96,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
-        int rewardTaken = 0;
         int step = 0;
-
-        // Set all distractors to false again.
-        reset_distractors(maze);
-
-        //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
 
         // Choose initial cell and action.
         currentCell = startCell;
@@ -127,28 +111,15 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, greedyEpsilon);
 
             // Update the state-action value.
-            double reward;
-            if (newCell.isDistractor && !(newCell.rewardTaken)) {
-                reward = newCell.distractionReward;
-                maze[newCell.x][newCell.y].rewardTaken = true;
-                rewardTaken = 1;
-            } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
-                // The next cell is the terminal state.
-                // Deduct the reward times penalty factor.
-                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
-            } else {
-                reward = newCell.reward;
-            }
-            
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex] 
-                    += alpha * (reward 
+                    += alpha * (newCell.reward 
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
             currentCell = newCell;
             actionIndex = newActionIndex;
 
-            totalReward += reward;
+            totalReward += newCell.reward;
 
         }
 
@@ -170,9 +141,6 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
         if (i + 1 == episodes) {
             // Report the total reward.
             cout << "Total reward: " << totalReward << '\n';
-
-            // Report whether the distraction reward was taken.
-            cout << "Reward taken: " << rewardTaken << '\n';
 
             // Report number of steps.
             cout << "Number of steps: " << step << '\n';
@@ -207,13 +175,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
     for (int i = 0; i < episodes; i++) {
         int totalReward = 0;
-        int rewardTaken = 0;
         int step = 0;
-
-        // Set all distractors to false again.
-        reset_distractors(maze);
-        
-        //cout << "Greedy epsilon: " << greedyEpsilon * (1 / exp((0.0001 * i))) << '\n';
         
         // Choose initial cell and action.
         currentCell = startCell;
@@ -226,30 +188,17 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
             
             newCell = index2NewCell(actionIndex, maze, currentCell);
 
-
             int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, 0);
 
             // Update the state-action value.
-            double reward;
-            if (newCell.isDistractor && !(newCell.rewardTaken)) {
-                reward = newCell.distractionReward;
-                maze[newCell.x][newCell.y].rewardTaken = true;
-                rewardTaken = 1;
-            } else if (newCell.x == endCell.x && newCell.y == endCell.y) {
-                // The next cell is the terminal state.
-                // Deduct the reward times penalty factor.
-                reward = newCell.reward - (penaltyFactor * defaultDistractionReward * rewardTaken);
-            } else {
-                reward = newCell.reward;
-            }
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex]
-                    += alpha * (reward
+                    += alpha * (newCell.reward
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
             currentCell = newCell;
 
-            totalReward += reward;
+            totalReward += newCell.reward;
         }
 
         if (step > maxSteps) {
@@ -270,9 +219,6 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
         if (i + 1 == episodes) {
             // Report the total reward.
             cout << "Total reward: " << totalReward << '\n';
-
-            // Report whether the distraction reward was taken.
-            cout << "Reward taken: " << rewardTaken << '\n';
 
             // Report number of steps.
             cout << "Number of steps: " << step << '\n';
@@ -392,14 +338,6 @@ int findOptimalAction(double values[], MazeCell c, int length) {
     return optimalAction;
 }
 
-void reset_distractors(vector<vector<MazeCell> > &maze) {
-    for (int j = 0, n = maze.size(); j < n; j++) {
-        for (int k = 0; k < n; k++) {
-            maze[j][k].rewardTaken = false;
-        }
-    }
-}
-
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell) {
     switch(actionIndex) {
         case 0:
@@ -426,7 +364,7 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
     return currentCell;
 }
 
-vector<vector<MazeCell> > initialize_maze(bool includeDistractions) {
+vector<vector<MazeCell> > initialize_maze() {
     // Get the size of the maze.
     ifstream inFile("maze-generator/maze_export");
     int count = std::count(istreambuf_iterator<char>(inFile),
@@ -490,16 +428,6 @@ vector<vector<MazeCell> > initialize_maze(bool includeDistractions) {
                 cell.isEnd = false;
             }
 
-            if (stoi(splittedString[8]) == 1 && includeDistractions) {
-                cell.isDistractor = true;
-                cell.rewardTaken = false;
-
-                // Set a distractor reward.
-                cell.distractionReward = defaultDistractionReward;
-            } else {
-                cell.isDistractor = false;
-            }
-
             cell.x = stoi(splittedString[0]);
             cell.y = stoi(splittedString[1]);
 
@@ -557,8 +485,6 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
         for (int j = 0; j < size; j++) {
             if (maze[i][j].down == 0) {
                 cout << "_";
-            } else if (maze[i][j].isDistractor) {
-                cout << "x";
             } else {
                 cout << " ";
             }
@@ -617,14 +543,8 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
                 default:
                     arrow = ".";
             }
-            
-            if (maze[i][j].isDistractor) {
-                if (maze[i][j].down == 0) {
-                    arrow = "\033[4;31m" + arrow + "\033[0m";
-                } else {
-                    arrow = "\033[31m" + arrow + "\033[0m";
-                }
-            } else if (maze[i][j].isEnd) {
+
+            if (maze[i][j].isEnd) {
                 if (maze[i][j].down == 0) {
                     arrow = "\033[4;32m" + arrow + "\033[0m";
                 } else {
