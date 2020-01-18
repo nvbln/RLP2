@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Ignore statistics files.
+sarsa_performance.csv
+qlearning_performance.csv
