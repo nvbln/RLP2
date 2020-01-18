@@ -27,6 +27,7 @@ struct MazeCell {
     bool left;
     bool right;
     double reward;
+    bool isHelper = false;
 
     // Location in matrix.
     int x;
@@ -38,8 +39,9 @@ struct CellValue {
     double actions[4];
 };
 
-void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
-void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon);
+void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
+void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
+double returnReward(MazeCell cell, bool withHelpers);
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
 int findOptimalAction(double values[], MazeCell c, int length);
 void reset_distractors(vector<vector<MazeCell> > &maze);
@@ -56,9 +58,11 @@ double alpha = 0.1;
 double ygamma = 0.98;
 double defaultReward = -0.98;
 double finalReward = 100;
+double helperReward = 0;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
+    bool withHelpers = false;
     
     vector<vector<MazeCell> > maze;
     
@@ -67,18 +71,29 @@ int main(int argc, const char * argv[]) {
     print_maze(maze.size(), maze);
     
     cout << "Sarsa\n";
-    sarsa(maze, 10000, greedyEpsilon);
+    sarsa(maze, 10000, greedyEpsilon, withHelpers);
     
     // RNG seed is the same for both algos
     
     maze = initialize_maze();
     cout << "Q-Learning\n";
-    qlearning(maze, 10000, greedyEpsilon);
+    qlearning(maze, 10000, greedyEpsilon, withHelpers);
+
+    // With helpers
+    withHelpers = 1;
+
+    maze = initialize_maze();
+    cout << "Sarsa\n";
+    sarsa(maze, 10000, greedyEpsilon, withHelpers);
+    
+    maze = initialize_maze();
+    cout << "Q-Learning\n";
+    qlearning(maze, 10000, greedyEpsilon, withHelpers);
     
     return 0;
 }
 
-void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
+void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
     // Create a matrix containing random state-action values.
@@ -96,7 +111,11 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
     // Open file to write performance to.
     ofstream sarsaPerformance;
-    sarsaPerformance.open("sarsa_performance.csv");
+    if (withHelpers) {
+        sarsaPerformance.open("sarsa_performance_help.csv");
+    } else {
+        sarsaPerformance.open("sarsa_performance.csv");
+    }
     sarsaPerformance << "episode, reward\n";
 
     for (int i = 0; i < episodes; i++) {
@@ -117,7 +136,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex] 
-                    += alpha * (newCell.reward 
+                    += alpha * (returnReward(newCell, withHelpers)
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
@@ -166,7 +185,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     cout << "Final reward: " << finalReward << '\n';
 }
 
-void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
+void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
     // Create a matrix containing random state-action values.
@@ -184,7 +203,11 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
     // Open file to write performance to.
     ofstream qlearningPerformance;
-    qlearningPerformance.open("qlearning_performance.csv");
+    if (withHelpers) {
+        qlearningPerformance.open("qlearning_performance_help.csv");
+    } else {
+        qlearningPerformance.open("qlearning_performance.csv");
+    }
     qlearningPerformance << "episode, reward\n";
 
     for (int i = 0; i < episodes; i++) {
@@ -206,7 +229,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex]
-                    += alpha * (newCell.reward
+                    += alpha * (returnReward(newCell, withHelpers)
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
@@ -251,6 +274,14 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     cout << "Min steps: " << minSteps << '\n';
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
     cout << "Final reward: " << finalReward << '\n';
+}
+
+double returnReward(MazeCell cell, bool withHelpers) {
+    if (cell.isHelper && withHelpers) {
+        return helperReward;
+    } else {
+        return cell.reward;
+    }
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
@@ -446,6 +477,11 @@ vector<vector<MazeCell> > initialize_maze() {
                 cell.isEnd = false;
             }
 
+            if (stoi(splittedString[8]) == 1) {
+                // Set isHelper to true.
+                cell.isHelper = true;
+            }
+
             cell.x = stoi(splittedString[0]);
             cell.y = stoi(splittedString[1]);
 
@@ -503,6 +539,8 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
         for (int j = 0; j < size; j++) {
             if (maze[i][j].down == 0) {
                 cout << "_";
+            } else if (maze[i][j].isHelper) {
+                cout << "x";
             } else {
                 cout << " ";
             }
