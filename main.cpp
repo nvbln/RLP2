@@ -53,8 +53,8 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
 int seed = 0;
 
 double alpha = 0.1;
-double ygamma = 0.9;
-double defaultReward = 0;
+double ygamma = 0.98;
+double defaultReward = -0.98;
 double finalReward = 100;
 
 int main(int argc, const char * argv[]) {
