@@ -94,6 +94,11 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
     int maxRewardSteps = 0;
     double finalReward = 0;
 
+    // Open file to write performance to.
+    ofstream sarsaPerformance;
+    sarsaPerformance.open("sarsa_performance.csv");
+    sarsaPerformance << "episode, number of steps\n";
+
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
@@ -123,6 +128,8 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
 
         }
 
+        sarsaPerformance << i << ", " << step << '\n';
+
         if (step > maxSteps) {
             maxSteps = step;
         } else if (step < minSteps) {
@@ -146,6 +153,8 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon) {
             cout << "Number of steps: " << step << '\n';
         }
     }
+
+    sarsaPerformance.close();
 
     cout << '\n';
     print_optimal_actions(maze.size(), maze, mazeValues);
@@ -172,6 +181,11 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     int maxReward = 0;
     int maxRewardSteps = 0;
     int finalReward = 0;
+
+    // Open file to write performance to.
+    ofstream qlearningPerformance;
+    qlearningPerformance.open("qlearning_performance.csv");
+    qlearningPerformance << "episode, number of steps\n";
 
     for (int i = 0; i < episodes; i++) {
         int totalReward = 0;
@@ -200,6 +214,9 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
             totalReward += newCell.reward;
         }
+
+        qlearningPerformance << i << ", " << step << '\n';
+        qlearningPerformance.close();
 
         if (step > maxSteps) {
             maxSteps = step;
