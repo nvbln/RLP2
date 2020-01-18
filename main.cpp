@@ -216,7 +216,6 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
         }
 
         qlearningPerformance << i << ", " << totalReward << '\n';
-        qlearningPerformance.close();
 
         if (step > maxSteps) {
             maxSteps = step;
@@ -241,6 +240,8 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
             cout << "Number of steps: " << step << '\n';
         }
     }
+
+    qlearningPerformance.close();
 
     cout << '\n';
     print_optimal_actions(maze.size(), maze, mazeValues);
