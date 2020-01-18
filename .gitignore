@@ -34,3 +34,5 @@
 # Ignore statistics files.
 sarsa_performance.csv
 qlearning_performance.csv
+sarsa_performance_help.csv
+qlearning_performance_help.csv
