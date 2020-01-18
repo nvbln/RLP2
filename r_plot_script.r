@@ -21,6 +21,7 @@ colnames(qlearning_performance_help)[which(names(qlearning_performance_help) == 
 performance <- merge(performance, sarsa_performance_help)
 performance <- merge(performance, qlearning_performance_help)
 
+# Create the plot using all columns.
 ggplot(performance, aes(episode)) +
   geom_line(aes(y=sarsa_reward, colour = "Sarsa")) +
   geom_line(aes(y=qlearning_reward, colour = "Qlearning")) +
