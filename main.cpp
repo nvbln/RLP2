@@ -538,7 +538,11 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
         cout << "|";
         for (int j = 0; j < size; j++) {
             if (maze[i][j].down == 0) {
-                cout << "_";
+                if (maze[i][j].isHelper) {
+                    cout << "\033[4mx\033[0m"; // x with underscore
+                } else {
+                    cout << "_";
+                }
             } else if (maze[i][j].isHelper) {
                 cout << "x";
             } else {
