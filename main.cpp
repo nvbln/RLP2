@@ -48,7 +48,7 @@ void reset_distractors(vector<vector<MazeCell> > &maze);
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
 void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell);
-vector<vector<MazeCell> > initialize_maze();
+vector<vector<MazeCell> > initialize_maze(bool breakDown);
 void print_maze(int size, vector<vector<MazeCell> > maze);
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
 
@@ -59,6 +59,7 @@ double ygamma = 0.98;
 double defaultReward = -0.98;
 double finalReward = 100;
 double helperReward = 0;
+bool breakDown = true;
 
 int main(int argc, const char * argv[]) {
     double greedyEpsilon = 0.4;
@@ -66,7 +67,7 @@ int main(int argc, const char * argv[]) {
     
     vector<vector<MazeCell> > maze;
     
-    maze = initialize_maze();
+    maze = initialize_maze(breakDown);
     
     print_maze(maze.size(), maze);
     
@@ -75,18 +76,18 @@ int main(int argc, const char * argv[]) {
     
     // RNG seed is the same for both algos
     
-    maze = initialize_maze();
+    maze = initialize_maze(breakDown);
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon, withHelpers);
 
     // With helpers
     withHelpers = 1;
 
-    maze = initialize_maze();
+    maze = initialize_maze(breakDown);
     cout << "Sarsa\n";
     sarsa(maze, 10000, greedyEpsilon, withHelpers);
     
-    maze = initialize_maze();
+    maze = initialize_maze(breakDown);
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon, withHelpers);
     
@@ -413,16 +414,22 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
     return currentCell;
 }
 
-vector<vector<MazeCell> > initialize_maze() {
+vector<vector<MazeCell> > initialize_maze(bool breakDown) {
     // Get the size of the maze.
-    ifstream inFile("maze-generator/maze_export");
+    string inputPath;
+    if (breakDown) {
+        inputPath = "maze-generator/maze_export_broken";
+    } else {
+        inputPath = "maze-generator/maze_export";
+    }
+    ifstream inFile(inputPath);
     int count = std::count(istreambuf_iterator<char>(inFile),
                istreambuf_iterator<char>(), '\n');
+    int size = sqrt(count);
 
-    vector<vector<MazeCell> > maze(sqrt(count),
-                                            vector<MazeCell>(sqrt(count)));
+    vector<vector<MazeCell> > maze(size, vector<MazeCell>(size));
 
-    ifstream in("maze-generator/maze_export");
+    ifstream in(inputPath);
     string str;
 
     // Skip the first line.
