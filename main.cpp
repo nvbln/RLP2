@@ -64,7 +64,7 @@ double alpha = 0.1;
 double ygamma = 0.98;
 double defaultReward = -0.98;
 double finalReward = 100;
-double helperReward = 0;
+double helperReward = 0.2;
 bool breakDown = true;
 
 int main(int argc, const char * argv[]) {
