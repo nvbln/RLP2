@@ -39,7 +39,7 @@ ggplot(performance, aes(episode)) +
   geom_smooth(aes(y=qlearning_reward, colour = "Qlearning")) +
   geom_smooth(aes(y=sarsa_reward_help, colour = "Sarsa with help")) +
   geom_smooth(aes(y=qlearning_reward_help, colour = "Qlearning with help")) +
-  ylim(0,70) +
+  ylim(40,70) +
   
   #scale_y_log10( breaks=c(25,50,100,500,1000,2500,5000), limits=c(25,5000)) +
   ggtitle("Algorithm performance comparison.") +
