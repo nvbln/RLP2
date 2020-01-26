@@ -41,13 +41,14 @@ struct CellValue {
 
 void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
+void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
 double returnReward(MazeCell cell, bool withHelpers);
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
 int findOptimalAction(double values[], MazeCell c, int length);
 void reset_distractors(vector<vector<MazeCell> > &maze);
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
-void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell);
+void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero);
 vector<vector<MazeCell> > initialize_maze(bool breakDown);
 void print_maze(int size, vector<vector<MazeCell> > maze);
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
@@ -101,7 +102,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, b
     vector<vector<CellValue> > mazeValues(maze.size(),
             vector<CellValue>(maze.size()));
     
-    random_action_init(mazeValues, maze, startCell, endCell);
+    random_action_init(mazeValues, maze, startCell, endCell, true);
 
     // Keep track of best and worst performance.
     int maxSteps = 0;
@@ -192,7 +193,7 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     // Create a matrix containing random state-action values.
     vector<vector<CellValue> > mazeValues(maze.size(), vector<CellValue>(maze.size()));
     
-    random_action_init(mazeValues, maze, startCell, endCell);
+    random_action_init(mazeValues, maze, startCell, endCell, true);
 
     // Keep track of best and worst performance.
     int maxSteps = 0;
@@ -499,7 +500,7 @@ vector<vector<MazeCell> > initialize_maze(bool breakDown) {
     return maze;
 }
 
-void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell) {
+void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero) {
     // Random generator
     default_random_engine generator(seed);
     uniform_real_distribution<double> distribution(0.0,1.0);
@@ -528,6 +529,15 @@ void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<Ma
             }
         }
     }
+
+    if (terminalZero) {
+        // Set all terminal actions to zero value.
+        mazeValues[endCell.x][endCell.y].actions[0] = 0;
+        mazeValues[endCell.x][endCell.y].actions[1] = 0;
+        mazeValues[endCell.x][endCell.y].actions[2] = 0;
+        mazeValues[endCell.x][endCell.y].actions[3] = 0;
+    }
+
     return;
 }
 
