@@ -39,6 +39,11 @@ struct CellValue {
     double actions[4];
 };
 
+struct CellValueVector {
+    // Indexing: 0 = up, 1 = down, left = 2, right = 3.
+    vector<double> actions[4];
+};
+
 void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
 void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
 void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
@@ -81,6 +86,10 @@ int main(int argc, const char * argv[]) {
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon, withHelpers);
 
+    //maze = initialize_maze(breakDown);
+    //cout << "Monte Carlo\n";
+    //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
+
     // With helpers
     withHelpers = 1;
 
@@ -91,6 +100,10 @@ int main(int argc, const char * argv[]) {
     maze = initialize_maze(breakDown);
     cout << "Q-Learning\n";
     qlearning(maze, 10000, greedyEpsilon, withHelpers);
+
+    //maze = initialize_maze(breakDown);
+    //cout << "Monte Carlo\n";
+    //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
     
     return 0;
 }
@@ -276,6 +289,108 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
     cout << "Min steps: " << minSteps << '\n';
     cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
     cout << "Final reward: " << finalReward << '\n';
+}
+
+void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
+    MazeCell startCell, endCell, currentCell;
+
+    // Create a matrix containing random state-action values.
+    vector<vector<CellValue> > mazeValues(maze.size(), vector<CellValue>(maze.size()));
+    vector<vector<CellValueVector> > returns(maze.size(), vector<CellValueVector>(maze.size()));
+    random_action_init(mazeValues, maze, startCell, endCell, false);
+
+    // Keep track of best and worst performance.
+    int maxSteps = 0;
+    int minSteps = 276447231;
+    int size = maze.size();
+    int maxReward = 0;
+    int maxRewardSteps = 0;
+    int finalReward = 0;
+
+    // Open file to write performance to.
+    ofstream montecarloPerformance;
+    if (withHelpers) {
+        montecarloPerformance.open("montecarlo_performance_help.csv");
+    } else {
+        montecarloPerformance.open("montecarlo_performance.csv");
+    }
+    montecarloPerformance << "episode, reward\n";
+
+    for (int i = 0; i < episodes; i++) {
+        double totalReward = 0;
+        int step = 0;
+
+        // Choose initial cell and action.
+        currentCell = startCell;
+
+        // Keep track of states and actions.
+        vector<MazeCell> states;
+        vector<int> actions; // As always: 0 = up, 1 = down, 2 = left, 3 = right.
+
+        states.push_back(startCell);
+
+        // Generate episode following the policy.
+        while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            step++;
+            MazeCell newCell;
+
+            int actionIndex = chooseAction(currentCell, 
+                    mazeValues[currentCell.x][currentCell.y], i, greedyEpsilon);
+
+            newCell = index2NewCell(actionIndex, maze, currentCell);
+
+            currentCell = newCell;
+            totalReward += newCell.reward;
+
+            states.push_back(currentCell);
+            actions.push_back(actionIndex);
+        }
+
+        int previousReward = 0;
+        // states.size() - 1 because we don't need to do this for the terminal state.
+        for (int j = 0; j < states.size() - 1; j++) {
+            previousReward += ygamma * states[j].reward;
+            bool encounteredPreviously = false;
+            for (int k = 0; k < j; k++) {
+                if (states[k].x == states[j].x && states[k].y == states[j].y && actions[k] == actions[j]) {
+                    // Same state-action pair, don't give a reward.
+                    encounteredPreviously = true;
+                }
+            }
+
+            if (!encounteredPreviously) {
+                returns[states[j].x][states[j].y].actions[actions[j]].push_back(previousReward);
+                double averageReward = 0;
+                vector<double> currentPair = returns[states[j].x][states[j].y].actions[actions[j]];
+                for (int k = 0; k < currentPair.size(); k++) {
+                    averageReward += currentPair[k];
+                }
+
+                averageReward /= currentPair.size();
+                mazeValues[states[j].x][states[j].y].actions[actions[j]] = averageReward;
+
+                double highestActionValue = 0;
+                int highestActionValueIndex = 0;
+                for (int k = 0; k < 4; k++) {
+                    double currentValue = mazeValues[states[j].x][states[j].y].actions[k];
+                    if (currentValue > highestActionValue) {
+                        highestActionValue = currentValue;
+                        highestActionValueIndex = k;
+                    }
+                }
+
+                for (int k = 0; k < 4; k++) {
+                    if (k == highestActionValueIndex) {
+                        mazeValues[states[j].x][states[j].y].actions[k] 
+                                = 1 - greedyEpsilon + (greedyEpsilon / abs(highestActionValue));
+                    } else {
+                        mazeValues[states[j].x][states[j].y].actions[k] 
+                                = greedyEpsilon / abs(highestActionValue);
+                    }
+                }
+            }
+        }
+    }
 }
 
 double returnReward(MazeCell cell, bool withHelpers) {
