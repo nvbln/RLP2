@@ -11,6 +11,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <time.h>
 
 
 using namespace std;
@@ -60,6 +61,7 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
 // Utility functions
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
 vector<string> split(string strToSplit, char delimiter);
+void parameterSweep();
 
 int seed = 0;
 int episodes = 10000;
@@ -72,14 +74,19 @@ double defaultReward = -0.98;
 double finalReward = 100;
 double helperReward = 0.2;
 
-bool breakDown = false; // Remove some walls from the maze to allow for more paths.
+bool pSweep = false;
+ofstream parameterPerformance;
+
+bool breakDown = true; // Remove some walls from the maze to allow for more paths.
 
 int main(int argc, const char * argv[]) {
     bool withHelpers = false;
     
     vector<vector<MazeCell> > maze;
+
+    parameterSweep();
     
-    maze = initialize_maze(breakDown, withHelpers);
+    /*maze = initialize_maze(breakDown, withHelpers);
     print_maze(maze.size(), maze);
     
     cout << "Sarsa\n";
@@ -108,6 +115,7 @@ int main(int argc, const char * argv[]) {
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
     //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
+    */
     
     return 0;
 }
@@ -137,6 +145,10 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
     }
     sarsaPerformance << "episode, reward\n";
 
+    time_t startTime = time(0);
+    bool overTime = false;
+    double totalRewardEpisodes = 0;
+
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
@@ -144,6 +156,13 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
         // Choose initial cell and action.
         currentCell = startCell;
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            //cout << "time: " << difftime(time(0), startTime) << '\n';
+            if (pSweep && difftime(time(0), startTime) > 5) {
+                // Stop if we have to wait for longer than 10 seconds.
+                overTime = true;
+                break;
+            }
+
             step++;
             MazeCell newCell;
             
@@ -166,44 +185,58 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
             totalReward += newCell.reward;
 
         }
+
+        if (overTime) {
+            // Do not record this take.
+            break;
+        }
+
+        totalRewardEpisodes += totalReward;
         
         // Record performance over time.
         sarsaPerformance << i << ", " << totalReward << '\n';
 
-        if (step > maxSteps) {
-            maxSteps = step;
-        } else if (step < minSteps) {
-            minSteps = step;
-        }
-
-        if (totalReward >= maxReward) {
-            maxReward = totalReward;
-            if (maxRewardSteps > step || maxRewardSteps == 0) {
-                maxRewardSteps = step;
+        if (!pSweep) {
+            if (step > maxSteps) {
+                maxSteps = step;
+            } else if (step < minSteps) {
+                minSteps = step;
             }
-        }
-        
-        finalReward += totalReward;
-        
-        if (i + 1 == episodes) {
-            // Report the total reward.
-            cout << "Total reward: " << totalReward << '\n';
 
-            // Report number of steps.
-            cout << "Number of steps: " << step << '\n';
+            if (totalReward >= maxReward) {
+                maxReward = totalReward;
+                if (maxRewardSteps > step || maxRewardSteps == 0) {
+                    maxRewardSteps = step;
+                }
+            }
+            
+            finalReward += totalReward;
+            
+            if (i + 1 == episodes) {
+                // Report the total reward.
+                cout << "Total reward: " << totalReward << '\n';
+
+                // Report number of steps.
+                cout << "Number of steps: " << step << '\n';
+            }
         }
     }
 
     sarsaPerformance.close();
 
-    cout << '\n';
-    print_optimal_actions(maze.size(), maze, mazeValues);
-    print_maze(maze.size(), maze);
+    if (!pSweep) {
+        cout << '\n';
+        print_optimal_actions(maze.size(), maze, mazeValues);
+        print_maze(maze.size(), maze);
 
-    cout << "\nMax steps: " << maxSteps << '\n';
-    cout << "Min steps: " << minSteps << '\n';
-    cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
-    cout << "Final reward: " << finalReward << '\n';
+        cout << "\nMax steps: " << maxSteps << '\n';
+        cout << "Min steps: " << minSteps << '\n';
+        cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
+        cout << "Final reward: " << finalReward << '\n';
+    } else {
+        double averageReward = totalRewardEpisodes / (double) episodes;
+        parameterPerformance << "sarsa," << alpha << "," << ygamma << "," << greedyEpsilon << "," << defaultReward << "," << averageReward << "\n";
+    }
 }
 
 void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
@@ -231,6 +264,10 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
     }
     qlearningPerformance << "episode, reward\n";
 
+    time_t startTime = time(0);
+    bool overTime = false;
+    double totalRewardEpisodes = 0;
+
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
@@ -239,6 +276,12 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
         currentCell = startCell;
 
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            if (pSweep && difftime(time(0), startTime) > 5) {
+                // Stop if we have to wait for longer than 10 seconds.
+                overTime = true;
+                break;
+            }
+
             step++;
             MazeCell newCell;
             
@@ -259,44 +302,58 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
 
             totalReward += newCell.reward;
         }
+
+        if (overTime) {
+            // Do not record this take.
+            break;
+        }
+
+        totalRewardEpisodes += totalReward;
         
         // Record performance over time.
         qlearningPerformance << i << ", " << totalReward << '\n';
 
-        if (step > maxSteps) {
-            maxSteps = step;
-        } else if (step < minSteps) {
-            minSteps = step;
-        }
-
-        if (totalReward >= maxReward) {
-            maxReward = totalReward;
-            if (maxRewardSteps > step || maxRewardSteps == 0) {
-                maxRewardSteps = step;
+        if (!pSweep) {
+            if (step > maxSteps) {
+                maxSteps = step;
+            } else if (step < minSteps) {
+                minSteps = step;
             }
-        }
-        
-        finalReward += totalReward;
 
-        if (i + 1 == episodes) {
-            // Report the total reward.
-            cout << "Total reward: " << totalReward << '\n';
+            if (totalReward >= maxReward) {
+                maxReward = totalReward;
+                if (maxRewardSteps > step || maxRewardSteps == 0) {
+                    maxRewardSteps = step;
+                }
+            }
+            
+            finalReward += totalReward;
 
-            // Report number of steps.
-            cout << "Number of steps: " << step << '\n';
+            if (i + 1 == episodes) {
+                // Report the total reward.
+                cout << "Total reward: " << totalReward << '\n';
+
+                // Report number of steps.
+                cout << "Number of steps: " << step << '\n';
+            }
         }
     }
 
     qlearningPerformance.close();
 
-    cout << '\n';
-    print_optimal_actions(maze.size(), maze, mazeValues);
-    print_maze(maze.size(), maze);
+    if (!pSweep) {
+        cout << '\n';
+        print_optimal_actions(maze.size(), maze, mazeValues);
+        print_maze(maze.size(), maze);
 
-    cout << "\nMax steps: " << maxSteps << '\n';
-    cout << "Min steps: " << minSteps << '\n';
-    cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
-    cout << "Final reward: " << finalReward << '\n';
+        cout << "\nMax steps: " << maxSteps << '\n';
+        cout << "Min steps: " << minSteps << '\n';
+        cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
+        cout << "Final reward: " << finalReward << '\n';
+    } else {
+        double averageReward = totalRewardEpisodes / (double) episodes;
+        parameterPerformance << "qlearning," << alpha << "," << ygamma << "," << greedyEpsilon << "," << defaultReward << "," << averageReward << "\n";
+    }
 }
 
 void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
@@ -802,3 +859,30 @@ vector<string> split(string strToSplit, char delimiter) {
     return splittedStrings;
 }
 
+void parameterSweep() {
+    pSweep = true;
+    parameterPerformance.open("parameter_performance.csv");
+    parameterPerformance << "algorithm,alpha,ygamma,greedyEpsilon,defaultReward,averageReward\n";
+
+    vector<vector<MazeCell> > maze;
+
+    int i = 0;
+    for (alpha = 0.1; alpha < 0.7; alpha += 0.1) {
+        for (ygamma = 0.95; ygamma < 1; ygamma += 0.01) {
+            for(greedyEpsilon = 0.1; greedyEpsilon < 0.5; greedyEpsilon += 0.1) {
+                for (defaultReward = -0.9; defaultReward > -1; defaultReward -= 0.01) {
+                    maze = initialize_maze(true, false);
+                    sarsa(maze, false);
+
+                    maze = initialize_maze(true, false);
+                    qlearning(maze, false);
+                    cout << "Done!" << i << "\n";
+                    i++;
+                }
+            }
+        }
+    }
+
+    parameterPerformance.close();
+    pSweep = false;
+}
