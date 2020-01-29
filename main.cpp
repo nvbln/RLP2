@@ -1,10 +1,6 @@
-//
-//  main.cpp
-//  mazes
-//
-//  Created by Galina on 10/12/2019.
-//  Copyright © 2019 Galina and Nathan. All rights reserved.
-//
+// This program learns how to find the maze's exit.
+// Possible RL algorithms for that are Sarsa and Q-learing.
+// by Nathan van Beelen and Lesnic Galina
 
 #include <iostream>
 #include <stdio.h>
@@ -44,62 +40,70 @@ struct CellValueVector {
     vector<double> actions[4];
 };
 
-void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
-void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
-void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers);
-double returnReward(MazeCell cell, bool withHelpers);
+// RL algorithms
+void sarsa(vector<vector<MazeCell> > maze, bool withHelpers);
+void qlearning(vector<vector<MazeCell> > maze, bool withHelpers);
+void montecarlo(vector<vector<MazeCell> > maze, bool withHelpers);
+
+// Maze initialization
+vector<vector<MazeCell> > initialize_maze(bool breakDown, bool withHelpers);
+void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero);
+
+// Choosing action
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon);
 int findOptimalAction(double values[], MazeCell c, int length);
-void reset_distractors(vector<vector<MazeCell> > &maze);
-MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
-vector<string> split(string strToSplit, char delimiter);
-void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero);
-vector<vector<MazeCell> > initialize_maze(bool breakDown);
+
+// Printing functions
 void print_maze(int size, vector<vector<MazeCell> > maze);
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues);
 
+// Utility functions
+MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell);
+vector<string> split(string strToSplit, char delimiter);
+
 int seed = 0;
+int episodes = 10000;
 
 double alpha = 0.1;
 double ygamma = 0.98;
+double greedyEpsilon = 0.4;
+
 double defaultReward = -0.98;
 double finalReward = 100;
 double helperReward = 0.2;
-bool breakDown = true;
+
+bool breakDown = true; // Remove some walls from the maze to allow for more paths.
 
 int main(int argc, const char * argv[]) {
-    double greedyEpsilon = 0.4;
     bool withHelpers = false;
     
     vector<vector<MazeCell> > maze;
     
-    maze = initialize_maze(breakDown);
-    
+    maze = initialize_maze(breakDown, withHelpers);
     print_maze(maze.size(), maze);
     
     cout << "Sarsa\n";
-    sarsa(maze, 10000, greedyEpsilon, withHelpers);
+    sarsa(maze, withHelpers);
     
     // RNG seed is the same for both algos
-    
-    maze = initialize_maze(breakDown);
+    maze = initialize_maze(breakDown, withHelpers);
     cout << "Q-Learning\n";
-    qlearning(maze, 10000, greedyEpsilon, withHelpers);
+    qlearning(maze, withHelpers);
 
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
     //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
 
     // With helpers
-    withHelpers = 1;
+    withHelpers = true;
 
-    maze = initialize_maze(breakDown);
+    maze = initialize_maze(breakDown, withHelpers);
     cout << "Sarsa\n";
-    sarsa(maze, 10000, greedyEpsilon, withHelpers);
+    sarsa(maze, withHelpers);
     
-    maze = initialize_maze(breakDown);
+    maze = initialize_maze(breakDown, withHelpers);
     cout << "Q-Learning\n";
-    qlearning(maze, 10000, greedyEpsilon, withHelpers);
+    qlearning(maze, withHelpers);
 
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
@@ -108,7 +112,7 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
-void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
+void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
     // Create a matrix containing random state-action values.
@@ -143,15 +147,16 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, b
             step++;
             MazeCell newCell;
             
+            // Find the best action.
             int actionIndex = chooseAction(currentCell, mazeValues[currentCell.x][currentCell.y], i, greedyEpsilon);
-            
             newCell = index2NewCell(actionIndex, maze, currentCell);
-
+            
+            // Find the next best action on-policy.
             int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, greedyEpsilon);
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex] 
-                    += alpha * (returnReward(newCell, withHelpers)
+                    += alpha * (newCell.reward
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
@@ -161,7 +166,8 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, b
             totalReward += newCell.reward;
 
         }
-
+        
+        // Record performance over time.
         sarsaPerformance << i << ", " << totalReward << '\n';
 
         if (step > maxSteps) {
@@ -200,7 +206,7 @@ void sarsa(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, b
     cout << "Final reward: " << finalReward << '\n';
 }
 
-void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
+void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
     // Create a matrix containing random state-action values.
@@ -236,15 +242,16 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
             step++;
             MazeCell newCell;
             
+            // Find the best action.
             int actionIndex = chooseAction(currentCell, mazeValues[currentCell.x][currentCell.y], i, greedyEpsilon);
-            
             newCell = index2NewCell(actionIndex, maze, currentCell);
 
+            // Find the next best action off-policy.
             int newActionIndex = chooseAction(newCell, mazeValues[newCell.x][newCell.y], i, 0);
 
             // Update the state-action value.
             mazeValues[currentCell.x][currentCell.y].actions[actionIndex]
-                    += alpha * (returnReward(newCell, withHelpers)
+                    += alpha * (newCell.reward
                     + (ygamma * mazeValues[newCell.x][newCell.y].actions[newActionIndex])
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
@@ -252,7 +259,8 @@ void qlearning(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilo
 
             totalReward += newCell.reward;
         }
-
+        
+        // Record performance over time.
         qlearningPerformance << i << ", " << totalReward << '\n';
 
         if (step > maxSteps) {
@@ -393,12 +401,136 @@ void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsil
     }
 }
 
-double returnReward(MazeCell cell, bool withHelpers) {
-    if (cell.isHelper && withHelpers) {
-        return helperReward;
+vector<vector<MazeCell> > initialize_maze(bool breakDown, bool withHelpers) {
+    // Get the size of the maze.
+    string inputPath;
+    if (breakDown) {
+        inputPath = "maze-generator/maze_export_broken";
     } else {
-        return cell.reward;
+        inputPath = "maze-generator/maze_export";
     }
+    ifstream inFile(inputPath);
+    int count = std::count(istreambuf_iterator<char>(inFile),
+               istreambuf_iterator<char>(), '\n');
+    int size = sqrt(count);
+
+    vector<vector<MazeCell> > maze(size, vector<MazeCell>(size));
+
+    ifstream in(inputPath);
+    string str;
+
+    // Skip the first line.
+    getline(in, str);
+
+    // Parsing file line.
+    while(getline(in, str)) {
+        if (str.size() > 0) {
+            // Initialise maze.
+            vector<string> splittedString = split(str, ',');
+
+            // Create a MazeCell
+            MazeCell cell;
+
+            // Set a default reward.
+            cell.reward = defaultReward;
+            if (stoi(splittedString[2]) == 1) {
+                cell.up = true;
+            } else {
+                cell.up = false;
+            }
+
+            if (stoi(splittedString[3]) == 1) {
+                cell.down = true;
+            } else {
+                cell.down = false;
+            }
+
+            if (stoi(splittedString[4]) == 1) {
+                cell.left = true;
+            } else {
+                cell.left = false;
+            }
+
+            if (stoi(splittedString[5]) == 1) {
+                cell.right = true;
+            } else {
+                cell.right = false;
+            }
+
+            if (stoi(splittedString[6]) == 1) {
+                cell.isStart = true;
+            } else {
+                cell.isStart = false;
+            }
+
+            if (stoi(splittedString[7]) == 1) {
+                cell.isEnd = true;
+
+                // Set a finish reward.
+                cell.reward = finalReward;
+            } else {
+                cell.isEnd = false;
+            }
+
+            if (stoi(splittedString[8]) == 1) {
+                if (withHelpers) {
+                    // Set isHelper to true.
+                    cell.isHelper = true;
+                    cell.reward = helperReward;
+                } else {
+                    cell.isHelper = 0;
+                }
+            }
+
+            cell.x = stoi(splittedString[0]);
+            cell.y = stoi(splittedString[1]);
+
+            maze[cell.x][cell.y] = cell;
+        }
+    }
+
+    return maze;
+}
+
+void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero) {
+    // Random generator
+    default_random_engine generator(seed);
+    uniform_real_distribution<double> distribution(0.0,1.0);
+    
+    for (int i = 0, n = maze.size(); i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            // Give every action a random value.
+            if (maze[i][j].up) {
+                mazeValues[i][j].actions[0] = distribution(generator);
+            }
+            if (maze[i][j].down) {
+                mazeValues[i][j].actions[1] = distribution(generator);
+            }
+            if (maze[i][j].left) {
+                mazeValues[i][j].actions[2] = distribution(generator);
+            }
+            if (maze[i][j].right) {
+                mazeValues[i][j].actions[3] = distribution(generator);
+            }
+
+            // Store the coordinates of the terminal states.
+            if (maze[i][j].isStart) {
+                startCell = maze[i][j];
+            } else if (maze[i][j].isEnd) {
+                endCell = maze[i][j];
+            }
+        }
+    }
+
+    if (terminalZero) {
+        // Set all terminal actions to zero value.
+        mazeValues[endCell.x][endCell.y].actions[0] = 0;
+        mazeValues[endCell.x][endCell.y].actions[1] = 0;
+        mazeValues[endCell.x][endCell.y].actions[2] = 0;
+        mazeValues[endCell.x][endCell.y].actions[3] = 0;
+    }
+
+    return;
 }
 
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
@@ -464,6 +596,7 @@ int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsi
 int findOptimalAction(double values[], MazeCell c, int length) {
     int optimalAction;
     int highestValue;
+    // Start with first possible action value.
     if (c.up) {
         optimalAction = 0;
         highestValue = values[0];
@@ -478,6 +611,7 @@ int findOptimalAction(double values[], MazeCell c, int length) {
         highestValue = values[3];
     }
     
+    // Find the highest action value.
     if (values[0] > highestValue && c.up) {
         highestValue = values[0];
         optimalAction = 0;
@@ -494,168 +628,9 @@ int findOptimalAction(double values[], MazeCell c, int length) {
         highestValue = values[3];
         optimalAction = 3;
     }
-   // for (int i = 0; i < length; i++) {
-   //     if (values[i] > highestValue && c) {
-   //         highestValue = values[i];
-   //         optimalAction = i;
-   //     }
-   // }
 
     return optimalAction;
 }
-
-MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell) {
-    switch(actionIndex) {
-        case 0:
-            // Up
-            return maze[currentCell.x - 1][currentCell.y];
-            break;
-        case 1:
-            // Down
-            return maze[currentCell.x + 1][currentCell.y];
-            break;
-        case 2:
-            // Left
-            return maze[currentCell.x][currentCell.y - 1];
-            break;
-        case 3:
-            // Right
-            return maze[currentCell.x][currentCell.y + 1];
-            break;
-        default:
-            // This should never happen.
-            cout << "Error - Wrong action, see function move(..)\n";
-    }
-    cout << "Error - Wrong action, see function move(..)\n";
-    return currentCell;
-}
-
-vector<vector<MazeCell> > initialize_maze(bool breakDown) {
-    // Get the size of the maze.
-    string inputPath;
-    if (breakDown) {
-        inputPath = "maze-generator/maze_export_broken";
-    } else {
-        inputPath = "maze-generator/maze_export";
-    }
-    ifstream inFile(inputPath);
-    int count = std::count(istreambuf_iterator<char>(inFile),
-               istreambuf_iterator<char>(), '\n');
-    int size = sqrt(count);
-
-    vector<vector<MazeCell> > maze(size, vector<MazeCell>(size));
-
-    ifstream in(inputPath);
-    string str;
-
-    // Skip the first line.
-    getline(in, str);
-
-    while(getline(in, str)) {
-        if (str.size() > 0) {
-            // Initialise maze.
-            vector<string> splittedString = split(str, ',');
-
-            // Create a MazeCell
-            MazeCell cell;
-
-            // Set a default reward.
-            cell.reward = defaultReward;
-            if (stoi(splittedString[2]) == 1) {
-                cell.up = true;
-            } else {
-                cell.up = false;
-            }
-
-            if (stoi(splittedString[3]) == 1) {
-                cell.down = true;
-            } else {
-                cell.down = false;
-            }
-
-            if (stoi(splittedString[4]) == 1) {
-                cell.left = true;
-            } else {
-                cell.left = false;
-            }
-
-            if (stoi(splittedString[5]) == 1) {
-                cell.right = true;
-            } else {
-                cell.right = false;
-            }
-
-            if (stoi(splittedString[6]) == 1) {
-                cell.isStart = true;
-            } else {
-                cell.isStart = false;
-            }
-
-            if (stoi(splittedString[7]) == 1) {
-                cell.isEnd = true;
-
-                // Set a finish reward.
-                cell.reward = finalReward;
-            } else {
-                cell.isEnd = false;
-            }
-
-            if (stoi(splittedString[8]) == 1) {
-                // Set isHelper to true.
-                cell.isHelper = true;
-            }
-
-            cell.x = stoi(splittedString[0]);
-            cell.y = stoi(splittedString[1]);
-
-            maze[cell.x][cell.y] = cell;
-        }
-    }
-
-    return maze;
-}
-
-void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero) {
-    // Random generator
-    default_random_engine generator(seed);
-    uniform_real_distribution<double> distribution(0.0,1.0);
-    
-    for (int i = 0, n = maze.size(); i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            // Give every action a random value.
-            if (maze[i][j].up) {
-                mazeValues[i][j].actions[0] = distribution(generator);
-            }
-            if (maze[i][j].down) {
-                mazeValues[i][j].actions[1] = distribution(generator);
-            }
-            if (maze[i][j].left) {
-                mazeValues[i][j].actions[2] = distribution(generator);
-            }
-            if (maze[i][j].right) {
-                mazeValues[i][j].actions[3] = distribution(generator);
-            }
-
-            // Store the coordinates of the terminal states.
-            if (maze[i][j].isStart) {
-                startCell = maze[i][j];
-            } else if (maze[i][j].isEnd) {
-                endCell = maze[i][j];
-            }
-        }
-    }
-
-    if (terminalZero) {
-        // Set all terminal actions to zero value.
-        mazeValues[endCell.x][endCell.y].actions[0] = 0;
-        mazeValues[endCell.x][endCell.y].actions[1] = 0;
-        mazeValues[endCell.x][endCell.y].actions[2] = 0;
-        mazeValues[endCell.x][endCell.y].actions[3] = 0;
-    }
-
-    return;
-}
-
 
 void print_maze(int size, vector<vector<MazeCell> > maze) {
     int iStart, jStart, iEnd, jEnd;
@@ -703,6 +678,7 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
     return;
 }
 
+
 // Makes use of unicode, might not work in every terminal.
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues) {
     cout << ".";
@@ -710,9 +686,6 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
         cout << "_.";
     }
     cout << '\n';
-    
-    string color_start = "\033[4;31m"; //\031[4m"; // black
-    string color_end = "\033[0m"; //\031[0m";
     
     for (int i = 0; i < mazeValues.size(); i++) {
         cout << "|";
@@ -737,18 +710,31 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
             }
 
             if (maze[i][j].isEnd) {
+                // Color green
                 if (maze[i][j].down == 0) {
+                    // Draw with underscore
                     arrow = "\033[4;32m" + arrow + "\033[0m";
                 } else {
                     arrow = "\033[32m" + arrow + "\033[0m";
                 }
             } else if (maze[i][j].isStart) {
+                // Color blue
                 if (maze[i][j].down == 0) {
+                    // Draw with underscore
                     arrow = "\033[4;34m" + arrow + "\033[0m";
                 } else {
                     arrow = "\033[34m" + arrow + "\033[0m";
                 }
+            } else if (maze[i][j].isHelper) {
+                // Color purple
+                if (maze[i][j].down == 0) {
+                    // Draw with underscore
+                    arrow = "\033[4;35m" + arrow + "\033[0m";
+                } else {
+                    arrow = "\033[35m" + arrow + "\033[0m";
+                }
             } else if (maze[i][j].down == 0) {
+                // Color black, with underscore
                 arrow = "\033[4m" + arrow + "\033[0m";
             }
             
@@ -762,14 +748,32 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
         }
         cout << '\n';
     }
+}
 
-    for (int i = 0; i < mazeValues.size(); i++) {
-        for (int j = 0; j < mazeValues.size(); j++) {
-            int index = findOptimalAction(mazeValues[i][j].actions, maze[i][j], 4);
-            //std::cout << mazeValues[i][j].actions[index] << " ";
-        }
-        //std::cout << '\n';
+MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell) {
+    switch(actionIndex) {
+        case 0:
+            // Up
+            return maze[currentCell.x - 1][currentCell.y];
+            break;
+        case 1:
+            // Down
+            return maze[currentCell.x + 1][currentCell.y];
+            break;
+        case 2:
+            // Left
+            return maze[currentCell.x][currentCell.y - 1];
+            break;
+        case 3:
+            // Right
+            return maze[currentCell.x][currentCell.y + 1];
+            break;
+        default:
+            // This should never happen.
+            cout << "Error - Wrong action, see function move(..)\n";
     }
+    cout << "Error - Wrong action, see function move(..)\n";
+    return currentCell;
 }
 
 vector<string> split(string strToSplit, char delimiter) {
