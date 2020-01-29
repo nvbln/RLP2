@@ -644,14 +644,30 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
     for (int i = 0; i < size; i++) {
         cout << "|";
         for (int j = 0; j < size; j++) {
-            if (maze[i][j].down == 0) {
-                if (maze[i][j].isHelper) {
-                    cout << "\033[4mx\033[0m"; // x with underscore
+            if (maze[i][j].isEnd) {
+                if (maze[i][j].down == 0) {
+                    // E with underscore
+                    cout << "\033[4mE\033[0m";
                 } else {
-                    cout << "_";
+                    cout << "E";
+                }
+            } else if (maze[i][j].isStart) {
+                if (maze[i][j].down == 0) {
+                    // S with underscore
+                    cout << "\033[4mS\033[0m";
+                } else {
+                    cout << "S";
                 }
             } else if (maze[i][j].isHelper) {
-                cout << "x";
+                if (maze[i][j].down == 0) {
+                    // x with underscore
+                    cout << "\033[4mx\033[0m";
+                } else {
+                    cout << "x";
+                }
+            } else if (maze[i][j].down == 0) {
+                // Color black, with underscore
+                cout << "_";
             } else {
                 cout << " ";
             }
