@@ -63,7 +63,7 @@ class Maze:
   # returns the maze in ascii characters for printing on terminal
   def __str__(self):
     file = open('maze_export', 'w')
-    file_content = "row,column,up,down,left,right,start,end\n"
+    file_content = "row,column,up,down,left,right,start,end,helper\n"
 
     # the upper wall first
     outtable = '.'+self.cols*'_.'+'\n'
@@ -102,11 +102,12 @@ class Maze:
         else:
           outtable += ' '
         if (i == self.startrow and j == self.startcol):
-            file_content += "1,0\n"
+            file_content += "1,0"
         elif (i == self.endrow and j == self.endrow):
-            file_content += "0,1\n"
+            file_content += "0,1"
         else:
-            file_content += "0,0\n"
+            file_content += "0,0"
+        file_content += ",0\n"
         if self.maze[i][j][RIGHTWALL]:
           outtable += '|'
         else:
