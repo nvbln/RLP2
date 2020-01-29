@@ -38,3 +38,5 @@ montecarlo_performance.csv
 sarsa_performance_help.csv
 qlearning_performance_help.csv
 montecarlo_performance_help.csv
+parameter_performance.csv
+parameter_performance_regular.csv
