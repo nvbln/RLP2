@@ -72,7 +72,7 @@ double defaultReward = -0.98;
 double finalReward = 100;
 double helperReward = 0.2;
 
-bool breakDown = true; // Remove some walls from the maze to allow for more paths.
+bool breakDown = false; // Remove some walls from the maze to allow for more paths.
 
 int main(int argc, const char * argv[]) {
     bool withHelpers = false;
