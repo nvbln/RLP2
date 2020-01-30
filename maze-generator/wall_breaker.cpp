@@ -32,7 +32,7 @@ vector<vector<MazeCell> > break_maze_down(vector<vector<MazeCell> > maze, int wa
 void print_maze(int size, vector<vector<MazeCell> > maze);
 
 int main(int argc, const char * argv[]) {
-    int wallsToBreak = 50;
+    int wallsToBreak = 4000;
 
     vector<vector<MazeCell> > maze;
     maze = initialize_maze();
