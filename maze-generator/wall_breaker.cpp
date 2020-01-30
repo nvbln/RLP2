@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <time.h>
 
 using namespace std;
 
@@ -31,6 +32,11 @@ void write_maze(vector<vector<MazeCell> > maze);
 vector<vector<MazeCell> > break_maze_down(vector<vector<MazeCell> > maze, int wallsToBreak);
 void print_maze(int size, vector<vector<MazeCell> > maze);
 
+/**
+ * This program takes an existing maze (e.g. maze_export) and removes a prespecified
+ * number of walls (see wallsToBreak) on random locations. The result is then written
+ * to the file maze_export_broken.
+ */
 int main(int argc, const char * argv[]) {
     int wallsToBreak = 4000;
 
@@ -142,9 +148,14 @@ vector<string> split(string strToSplit, char delimiter) {
     return splittedStrings;
 }
 
+/**
+ * Randomly remove walls from the maze.
+ * @param maze the maze to remove the walls from.
+ * @param wallsToBreak the total number of walls to break down.
+ */
 vector<vector<MazeCell> > break_maze_down(vector<vector<MazeCell> > maze, int wallsToBreak) {
     // Initialise random generator.
-    default_random_engine generator(123);
+    default_random_engine generator(time(0));
 
     int size = maze.size();
 
@@ -193,6 +204,10 @@ vector<vector<MazeCell> > break_maze_down(vector<vector<MazeCell> > maze, int wa
     return maze;
 }
 
+/**
+ * Writes the modified maze to file.
+ * @param maze the maze to write to file.
+ */
 void write_maze(vector<vector<MazeCell> > maze) {
     ofstream of("maze_export_broken");
     
