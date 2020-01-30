@@ -200,11 +200,10 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
             // (so not from the actual reward the agent gets!) in order to make
             // a fair comparison.
             if (newCell.isHelper && withHelpers) {
-                totalRewardEpisodes -= newCell.reward;
-                totalRewardEpisodes += defaultReward;
+                totalReward += defaultReward;
+            } else {
+                totalReward += newCell.reward;
             }
-
-            totalReward += newCell.reward;
 
         }
 
@@ -330,11 +329,10 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
             // (so not from the actual reward the agent gets!) in order to make
             // a fair comparison.
             if (newCell.isHelper && withHelpers) {
-                totalRewardEpisodes -= newCell.reward;
-                totalRewardEpisodes += defaultReward;
+                totalReward += defaultReward;
+            } else {
+                totalReward += newCell.reward;
             }
-
-            totalReward += newCell.reward;
         }
 
         if (overTime) {
