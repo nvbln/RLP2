@@ -63,7 +63,7 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
 vector<string> split(string strToSplit, char delimiter);
 void parameterSweep();
 
-int seed = 0;
+int seed = time(0);
 int episodes = 10000;
 
 double alpha = 0.1;
@@ -93,6 +93,9 @@ int main(int argc, const char * argv[]) {
     
     cout << "Sarsa\n";
     sarsa(maze, withHelpers);
+
+    // Change seed for different configurations.
+    seed += 1;
     
     // RNG seed is the same for both algos
     maze = initialize_maze(breakDown, withHelpers);
@@ -106,8 +109,14 @@ int main(int argc, const char * argv[]) {
     // With helpers
     withHelpers = true;
 
+    // Change seed for different configurations.
+    seed += 1;
+
     maze = initialize_maze(breakDown, withHelpers);
     cout << "Sarsa\n";
+
+    // Change seed for different configurations.
+    seed += 1;
     sarsa(maze, withHelpers);
     
     maze = initialize_maze(breakDown, withHelpers);
