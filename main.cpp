@@ -553,7 +553,7 @@ vector<vector<MazeCell> > initialize_maze(bool breakDown, bool withHelpers) {
                     cell.isHelper = true;
                     cell.reward = helperReward;
                 } else {
-                    cell.isHelper = 0;
+                    cell.isHelper = false;
                 }
             }
 
