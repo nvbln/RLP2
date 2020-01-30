@@ -67,26 +67,26 @@ int seed = 0;
 int episodes = 10000;
 
 double alpha = 0.1;
-double ygamma = 0.98;
+double ygamma = 0.95;
 double greedyEpsilon = 0.4;
 
 double defaultReward = -0.98;
 double finalReward = 100;
-double helperReward = 0.2;
+double helperReward = 0.1;
 
 bool pSweep = false;
 ofstream parameterPerformance;
 
-bool breakDown = true; // Remove some walls from the maze to allow for more paths.
+bool breakDown = false; // Remove some walls from the maze to allow for more paths.
 
 int main(int argc, const char * argv[]) {
     bool withHelpers = false;
     
     vector<vector<MazeCell> > maze;
 
-    parameterSweep();
+    //parameterSweep();
     
-    /*maze = initialize_maze(breakDown, withHelpers);
+    maze = initialize_maze(breakDown, withHelpers);
     print_maze(maze.size(), maze);
     
     cout << "Sarsa\n";
@@ -115,7 +115,6 @@ int main(int argc, const char * argv[]) {
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
     //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
-    */
     
     return 0;
 }
