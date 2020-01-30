@@ -77,7 +77,7 @@ double helperReward = 0.1;
 bool pSweep = false;
 ofstream parameterPerformance;
 
-bool breakDown = true; // Remove some walls from the maze to allow for more paths.
+bool breakDown = false; // Removes some walls from the maze to allow for more paths.
 
 int run = 10;
 
