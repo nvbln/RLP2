@@ -77,17 +77,26 @@ double helperReward = 0.1;
 bool pSweep = false;
 ofstream parameterPerformance;
 
-bool breakDown = false; // Removes some walls from the maze to allow for more paths.
+bool breakDown = false; // Uses maze_export_broken instead.
 
-int run = 10;
+int run = 1; // For the creation of csv files, does not have an effect on the experiment itself.
 
+/**
+ * This program implements both Sarsa and Qlearning in a maze environment
+ * given by either the maze_export or maze_export_broken file in the
+ * maze-generator directory. The program runs each algorithm for 10000 episodes.
+ * Once with the help of small rewards and once without.
+ */
 int main(int argc, const char * argv[]) {
     bool withHelpers = false;
     
     vector<vector<MazeCell> > maze;
 
-    //parameterSweep();
+    //parameterSweep(); // Was used in helping determine optimal parameters.
     
+    // Initialises, prints, and runs the algorithm on the maze.
+    // Initialisation gets repeated for every configuration 
+    // to make sure that the maze is not modified
     maze = initialize_maze(breakDown, withHelpers);
     print_maze(maze.size(), maze);
     
@@ -97,11 +106,12 @@ int main(int argc, const char * argv[]) {
     // Change seed for different configurations.
     seed += 1;
     
-    // RNG seed is the same for both algos
+    // Initialises, prints, and runs the algorithm on the maze.
     maze = initialize_maze(breakDown, withHelpers);
     cout << "Q-Learning\n";
     qlearning(maze, withHelpers);
 
+    // Monte Carlo has been implemented, but gets stuck and is therefore abandoned.
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
     //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
@@ -112,6 +122,7 @@ int main(int argc, const char * argv[]) {
     // Change seed for different configurations.
     seed += 1;
 
+    // Initialises, prints, and runs the algorithm on the maze.
     maze = initialize_maze(breakDown, withHelpers);
     cout << "Sarsa\n";
 
@@ -119,10 +130,12 @@ int main(int argc, const char * argv[]) {
     seed += 1;
     sarsa(maze, withHelpers);
     
+    // Initialises, prints, and runs the algorithm on the maze.
     maze = initialize_maze(breakDown, withHelpers);
     cout << "Q-Learning\n";
     qlearning(maze, withHelpers);
 
+    // Monte Carlo has been implemented, but gets stuck and is therefore abandoned.
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
     //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
@@ -130,6 +143,12 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
+/**
+ * Implements the Sarsa algorithm.
+ * Also writes performance to file.
+ * @param maze the environment that the Sarsa algorithm performs in.
+ * @param withHelpers whether helpers are enabled in the given environment.
+ */
 void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
@@ -163,16 +182,22 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
     bool overTime = false;
     double totalRewardEpisodes = 0;
 
+    // This code gets repeated for every episode.
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
 
         // Choose initial cell and action.
         currentCell = startCell;
+
+        // Run the algorithm for the current episode. Stop once the terminal
+        // state has been found.
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
-            //cout << "time: " << difftime(time(0), startTime) << '\n';
+            // If we are doing a parameter sweep, we often encounter parameter
+            // value(s) (combinations) that will not lead to an answer within
+            // a reasonable amount of time. Therefore we cut it off in a 
+            // parameter sweep.
             if (pSweep && difftime(time(0), startTime) > 5) {
-                // Stop if we have to wait for longer than 10 seconds.
                 overTime = true;
                 break;
             }
@@ -217,6 +242,7 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
         // Record performance over time.
         sarsaPerformance << i << ", " << totalReward << '\n';
 
+        // Simple statistics in case of debugging.
         if (!pSweep) {
             if (step > maxSteps) {
                 maxSteps = step;
@@ -243,8 +269,10 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
         }
     }
 
+    // Close the performance file.
     sarsaPerformance.close();
 
+    // Simple statistics in case of debugging.
     if (!pSweep) {
         cout << '\n';
         print_optimal_actions(maze.size(), maze, mazeValues);
@@ -255,11 +283,18 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
         cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
         cout << "Final reward: " << finalReward << '\n';
     } else {
+        // Report average reward when parameter sweeping.
         double averageReward = totalRewardEpisodes / (double) episodes;
         parameterPerformance << "sarsa," << alpha << "," << ygamma << "," << greedyEpsilon << "," << defaultReward << "," << averageReward << "\n";
     }
 }
 
+/**
+ * Implements the Q-learning algorithm.
+ * Also writes performance to file.
+ * @param maze the environment that the Q-learning algorithm performs in.
+ * @param withHelpers whether helpers are enabled in the given environment.
+ */
 void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
@@ -293,6 +328,7 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
     bool overTime = false;
     double totalRewardEpisodes = 0;
 
+    // This code gets repeated for every episode.
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
@@ -301,8 +337,11 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
         currentCell = startCell;
 
         while (currentCell.x != endCell.x || currentCell.y != endCell.y) {
+            // If we are doing a parameter sweep, we often encounter parameter
+            // value(s) (combinations) that will not lead to an answer within
+            // a reasonable amount of time. Therefore we cut it off in a 
+            // parameter sweep.
             if (pSweep && difftime(time(0), startTime) > 5) {
-                // Stop if we have to wait for longer than 10 seconds.
                 overTime = true;
                 break;
             }
@@ -345,6 +384,7 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
         // Record performance over time.
         qlearningPerformance << i << ", " << totalReward << '\n';
 
+        // Simple statistics in case of debugging.
         if (!pSweep) {
             if (step > maxSteps) {
                 maxSteps = step;
@@ -371,8 +411,10 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
         }
     }
 
+    // Close the performance file.
     qlearningPerformance.close();
 
+    // Simple statistics in case of debugging.
     if (!pSweep) {
         cout << '\n';
         print_optimal_actions(maze.size(), maze, mazeValues);
@@ -383,11 +425,19 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
         cout << "Max reward: " << maxReward << " and steps: " << maxRewardSteps << '\n';
         cout << "Final reward: " << finalReward << '\n';
     } else {
+        // Report average reward when parameter sweeping.
         double averageReward = totalRewardEpisodes / (double) episodes;
         parameterPerformance << "qlearning," << alpha << "," << ygamma << "," << greedyEpsilon << "," << defaultReward << "," << averageReward << "\n";
     }
 }
 
+/**
+ * Implements the Monte Carlo algorithm.
+ * Also writes performance to file.
+ * THIS ALGORITHM IS NOT ABLE TO SOLVE THE MAZE AND THEREFORE NOT USED.
+ * @param maze the environment that the Monte Carlo algorithm performs in.
+ * @param withHelpers whether helpers are enabled in the given environment.
+ */
 void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
@@ -413,6 +463,7 @@ void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsil
     }
     montecarloPerformance << "episode, reward\n";
 
+    // This code gets repeated for ever episode.
     for (int i = 0; i < episodes; i++) {
         double totalReward = 0;
         int step = 0;
@@ -455,6 +506,7 @@ void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsil
                 }
             }
 
+            // It is fist-visit
             if (!encounteredPreviously) {
                 returns[states[j].x][states[j].y].actions[actions[j]].push_back(previousReward);
                 double averageReward = 0;
@@ -476,6 +528,7 @@ void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsil
                     }
                 }
 
+                // FOr every possible action.
                 for (int k = 0; k < 4; k++) {
                     if (k == highestActionValueIndex) {
                         mazeValues[states[j].x][states[j].y].actions[k] 
@@ -490,6 +543,13 @@ void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsil
     }
 }
 
+/**
+ * Initialises the maze. 
+ * More concretely, it reads the maze from file and puts it in a vector matrix
+ * of MazeCells.
+ * @param breakDown whether maze_export_broken needs to be used instead.
+ * @param withHelpers whether helper cells needs to have a different reward.
+ */
 vector<vector<MazeCell> > initialize_maze(bool breakDown, bool withHelpers) {
     // Get the size of the maze.
     string inputPath;
@@ -581,6 +641,14 @@ vector<vector<MazeCell> > initialize_maze(bool breakDown, bool withHelpers) {
     return maze;
 }
 
+/**
+ * Sets the given action values of the given mazeValues matrix to a random number.
+ * @param mazeValues a vector matrix made up of CellValue's.
+ * @param maze the maze that the mazeValues is generated for.
+ * @param startCell the cell where the agend starts.
+ * @param endCell the termination cell.
+ * @param terminalZero whether the action values at the terminal state should be zero.
+ */
 void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<MazeCell> > maze, MazeCell &startCell, MazeCell &endCell, bool terminalZero) {
     // Random generator
     default_random_engine generator(seed);
@@ -622,11 +690,19 @@ void random_action_init(vector<vector<CellValue> > &mazeValues, vector<vector<Ma
     return;
 }
 
+/**
+ * Decides which action should be taken given the MazeCell.
+ * @param cell the cell that the action is a part of.
+ * @param values the values of all the actions of the previously given cell.
+ * @param episode the current episode, used for calculating epsilon decay.
+ * @param greedyEpsilon the epsilon value without decay.
+ */
 int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsilon) {
     int optimalAction = findOptimalAction(values.actions, cell, 4);
     
     int possibleActions = 0;
 
+    // Check the number of possible actions in the current state.
     if (cell.up) {
        possibleActions++;
     }
@@ -643,10 +719,13 @@ int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsi
        possibleActions++;
     }
 
+    // Return the optimal action if the number is bigger or equal to the
+    // current value of epsilon with decay.
     double number = (double) rand() / (double) RAND_MAX;
     if (number <= 1 - (greedyEpsilon * (1 / exp(0.0001 * episode)))) {
         return optimalAction;
     } else {
+        // Choose a random action from the possible actions.
         int action = floor(possibleActions * ((double) rand() / (double) RAND_MAX));
         switch(action) {
             case 0:
@@ -682,6 +761,12 @@ int chooseAction(MazeCell cell, CellValue values, int episode, double greedyEpsi
     }
 }
 
+/**
+ * Finds the highest action value of a MazeCell.
+ * @param values the action-values.
+ * @param c the MazeCell that the action-values correspond to.
+ * @param length the length of the values[] array.
+ */
 int findOptimalAction(double values[], MazeCell c, int length) {
     int optimalAction;
     int highestValue;
@@ -721,6 +806,10 @@ int findOptimalAction(double values[], MazeCell c, int length) {
     return optimalAction;
 }
 
+/**
+ * Prints the given maze. Mainly for aesthetic purposes and/or for debugging.
+ * @param maze the maze to print to output.
+ */
 void print_maze(int size, vector<vector<MazeCell> > maze) {
     int iStart, jStart, iEnd, jEnd;
 
@@ -783,9 +872,16 @@ void print_maze(int size, vector<vector<MazeCell> > maze) {
     return;
 }
 
-
-// Makes use of unicode, might not work in every terminal.
+/**
+ * Prints a maze similar to print_maze with the exception that it prints arrows
+ * on the paths indicating the optimal value for every state.
+ * Mainly used for debugging.
+ * @param size the size of the maze.
+ * @param maze the maze to print the optimal values of.
+ * @param mazeValues the maze values corresponding to the given maze.
+ */
 void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vector<CellValue> > mazeValues) {
+    // Makes use of unicode, might not work in every terminal.
     cout << ".";
     for (int i = 0; i < size; i++) {
         cout << "_.";
@@ -855,6 +951,12 @@ void print_optimal_actions(int size, vector<vector<MazeCell> > maze, vector<vect
     }
 }
 
+/**
+ * Translates the index of an action to the cell that the agent moves to.
+ * @param actionIndex the index of the action that is/will be taken.
+ * @param maze the maze in which the action will be taken.
+ * @param currentCell the cell that the action is taken from.
+ */
 MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCell currentCell) {
     switch(actionIndex) {
         case 0:
@@ -881,6 +983,11 @@ MazeCell index2NewCell(int actionIndex, vector<vector<MazeCell> > &maze, MazeCel
     return currentCell;
 }
 
+/**
+ * Splits the given string into an array by the delimiter.
+ * @param strToSplit the string that needs to be split.
+ * @param delimiter the delimiter used to split the string.
+ */
 vector<string> split(string strToSplit, char delimiter) {
     stringstream ss(strToSplit);
     string item;
@@ -891,6 +998,12 @@ vector<string> split(string strToSplit, char delimiter) {
     return splittedStrings;
 }
 
+/**
+ * Performs a parameter sweep of four hyperparameters.
+ * Creates it's own parameter_performance.csv file containing the value of the
+ * parameters that are sweeped and the average reward as a measure of performance.
+ * Has been used in selecting optimal parameters.
+ */
 void parameterSweep() {
     pSweep = true;
     parameterPerformance.open("parameter_performance.csv");
