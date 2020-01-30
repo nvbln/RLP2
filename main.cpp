@@ -112,9 +112,9 @@ int main(int argc, const char * argv[]) {
     qlearning(maze, withHelpers);
 
     // Monte Carlo has been implemented, but gets stuck and is therefore abandoned.
-    //maze = initialize_maze(breakDown);
+    //maze = initialize_maze(breakDown, withHelpers);
     //cout << "Monte Carlo\n";
-    //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
+    //montecarlo(maze, withHelpers);
 
     // With helpers
     withHelpers = true;
@@ -138,7 +138,7 @@ int main(int argc, const char * argv[]) {
     // Monte Carlo has been implemented, but gets stuck and is therefore abandoned.
     //maze = initialize_maze(breakDown);
     //cout << "Monte Carlo\n";
-    //montecarlo(maze, 10000, greedyEpsilon, withHelpers);
+    //montecarlo(maze, withHelpers);
     
     return 0;
 }
@@ -438,7 +438,7 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
  * @param maze the environment that the Monte Carlo algorithm performs in.
  * @param withHelpers whether helpers are enabled in the given environment.
  */
-void montecarlo(vector<vector<MazeCell> > maze, int episodes, double greedyEpsilon, bool withHelpers) {
+void montecarlo(vector<vector<MazeCell> > maze, bool withHelpers) {
     MazeCell startCell, endCell, currentCell;
 
     // Create a matrix containing random state-action values.
