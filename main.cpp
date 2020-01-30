@@ -77,7 +77,9 @@ double helperReward = 0.1;
 bool pSweep = false;
 ofstream parameterPerformance;
 
-bool breakDown = false; // Remove some walls from the maze to allow for more paths.
+bool breakDown = true; // Remove some walls from the maze to allow for more paths.
+
+int run = 10;
 
 int main(int argc, const char * argv[]) {
     bool withHelpers = false;
@@ -137,10 +139,14 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
 
     // Open file to write performance to.
     ofstream sarsaPerformance;
+    string breakDownString = "";
+    if (breakDown) {
+        breakDownString = "_broken";
+    }
     if (withHelpers) {
-        sarsaPerformance.open("sarsa_performance_help.csv");
+        sarsaPerformance.open("sarsa_performance_help" + breakDownString + to_string(run) + ".csv");
     } else {
-        sarsaPerformance.open("sarsa_performance.csv");
+        sarsaPerformance.open("sarsa_performance" + breakDownString + to_string(run) + ".csv");
     }
     sarsaPerformance << "episode, reward\n";
 
@@ -256,10 +262,14 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
 
     // Open file to write performance to.
     ofstream qlearningPerformance;
+    string breakDownString = "";
+    if (breakDown) {
+        breakDownString = "_broken";
+    }
     if (withHelpers) {
-        qlearningPerformance.open("qlearning_performance_help.csv");
+        qlearningPerformance.open("qlearning_performance_help" + breakDownString + to_string(run) + ".csv");
     } else {
-        qlearningPerformance.open("qlearning_performance.csv");
+        qlearningPerformance.open("qlearning_performance" + breakDownString + to_string(run) + ".csv");
     }
     qlearningPerformance << "episode, reward\n";
 
