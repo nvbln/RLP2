@@ -196,6 +196,14 @@ void sarsa(vector<vector<MazeCell> > maze, bool withHelpers) {
             currentCell = newCell;
             actionIndex = newActionIndex;
 
+            // Subtract the rewards from the helper states from the statistics
+            // (so not from the actual reward the agent gets!) in order to make
+            // a fair comparison.
+            if (newCell.isHelper && withHelpers) {
+                totalRewardEpisodes -= newCell.reward;
+                totalRewardEpisodes += defaultReward;
+            }
+
             totalReward += newCell.reward;
 
         }
@@ -317,6 +325,14 @@ void qlearning(vector<vector<MazeCell> > maze, bool withHelpers) {
                     - mazeValues[currentCell.x][currentCell.y].actions[actionIndex]);
 
             currentCell = newCell;
+
+            // Subtract the rewards from the helper states from the statistics
+            // (so not from the actual reward the agent gets!) in order to make
+            // a fair comparison.
+            if (newCell.isHelper && withHelpers) {
+                totalRewardEpisodes -= newCell.reward;
+                totalRewardEpisodes += defaultReward;
+            }
 
             totalReward += newCell.reward;
         }
