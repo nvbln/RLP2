@@ -184,9 +184,29 @@ ggplot(performance, aes(episode)) +
   geom_smooth(aes(y=qlearning_reward_broken, colour = "Qlearning and broken")) +
   geom_smooth(aes(y=sarsa_reward_help_broken, colour = "Sarsa with help and broken")) +
   geom_smooth(aes(y=qlearning_reward_help_broken, colour = "Qlearning with help and broken")) +
-  ylim(40,75) +
+  #ylim(40,90) +
   
   #scale_y_log10( breaks=c(25,50,100,500,1000,2500,5000), limits=c(25,5000)) +
   ggtitle("Algorithm performance comparison.") +
   theme(plot.title = element_text(hjust = 0.5), legend.position=c(.88,.25)) +
   labs(y = "Reward", x = "Episodes", colour = "Algorithm")
+
+# For the report we want to compare regular and broken mazes separately, so we make two separate plots:
+
+# Regular maze
+ggplot(performance, aes(episode)) +
+  geom_smooth(aes(y=sarsa_reward, colour = "Sarsa")) +
+  geom_smooth(aes(y=qlearning_reward, colour = "Qlearning")) +
+  geom_smooth(aes(y=sarsa_reward_help, colour = "Sarsa with help")) +
+  geom_smooth(aes(y=qlearning_reward_help, colour = "Qlearning with help"))
+  #ylim(40,90)
+
+# Broken maze
+ggplot(performance, aes(episode)) +
+  geom_smooth(aes(y=sarsa_reward_broken, colour = "Sarsa")) +
+  geom_smooth(aes(y=qlearning_reward_broken, colour = "Qlearning")) +
+  geom_smooth(aes(y=sarsa_reward_help_broken, colour = "Sarsa with help")) +
+  geom_smooth(aes(y=qlearning_reward_help_broken, colour = "Qlearning with help")) +
+  ylim(0,80)
+
+  
